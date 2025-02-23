@@ -36,8 +36,10 @@ class HubSpot_WC_Auth {
     public static function get_token($store_url) {
         global $wpdb;
         $table_name = $wpdb->prefix . self::$table_name;
+
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE store_url = %s LIMIT 1", $store_url), ARRAY_A);
     }
+
 
     /**
      * Update or insert OAuth token for a store
@@ -50,18 +52,25 @@ class HubSpot_WC_Auth {
         $existing = self::get_token($store_url);
 
         if ($existing) {
-            $wpdb->update($table_name, [
+            $result = $wpdb->update($table_name, [
                 'access_token' => $access_token,
                 'refresh_token' => $refresh_token,
                 'expires_at' => $expires_at,
             ], ['store_url' => $store_url]);
         } else {
-            $wpdb->insert($table_name, [
+            $result = $wpdb->insert($table_name, [
                 'store_url' => $store_url,
                 'access_token' => $access_token,
                 'refresh_token' => $refresh_token,
                 'expires_at' => $expires_at,
             ]);
+        }
+
+        // Logging for debugging
+        if ($result === false) {
+            error_log("[HubSpot OAuth] ❌ Database error: " . $wpdb->last_error);
+        } else {
+            error_log("[HubSpot OAuth] ✅ Token stored successfully for Store: " . $store_url);
         }
     }
 
@@ -153,15 +162,18 @@ class HubSpot_WC_Auth {
         ]);
 
         if (is_wp_error($response)) {
+            error_log("[HubSpot OAuth] ❌ OAuth request failed: " . $response->get_error_message());
             return new WP_REST_Response(['error' => 'OAuth request failed'], 500);
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
 
         if (!isset($body['access_token']) || !isset($body['refresh_token'])) {
+            error_log("[HubSpot OAuth] ❌ Invalid OAuth response: " . print_r($body, true));
             return new WP_REST_Response(['error' => 'Invalid OAuth response'], 500);
         }
 
+        // Store token
         self::update_token($store_url, $body['access_token'], $body['refresh_token'], $body['expires_in']);
 
         return new WP_REST_Response(['message' => 'OAuth authentication successful'], 200);
