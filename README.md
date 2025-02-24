@@ -1,49 +1,68 @@
-=== HubSpot WooCommerce Sync ===
-Contributors: Weblifter
-Plugin Name: HubSpot WooCommerce Sync
-Plugin URI: https://github.com/weblifter/hubspot-woocommerce-sync
-Description: Sync WooCommerce orders with HubSpot deals using a public HubSpot app.
-Version: 1.0.0
-Requires at least: 5.6
-Tested up to: 6.3
-Requires PHP: 7.4
-License: GPL2
-License URI: https://www.gnu.org/licenses/gpl-2.0.html
-Tags: woocommerce, hubspot, ecommerce, crm
+# HubSpot WooCommerce Sync
 
-== Description ==
-This plugin connects WooCommerce with HubSpot, allowing automatic order synchronization with HubSpot deals.
+**Version:** 1.0.0  
+**Author:** [Weblifter](https://weblifter.com.au)  
+**Plugin URI:** [GitHub Repository](https://github.com/weblifter/hubspot-woocommerce-sync)  
+**License:** GPL-2.0  
 
-== Features ==
-* Automatically create WooCommerce orders when a HubSpot deal is won.
-* Update WooCommerce orders when a HubSpot deal is modified.
-* Delete WooCommerce orders when a HubSpot deal is removed.
-* Fetch WooCommerce order details from a HubSpot deal.
+## Overview
 
-== Installation ==
-1. Download the plugin ZIP file.
-2. Go to **WordPress Admin > Plugins > Add New > Upload Plugin**.
-3. Upload and activate the plugin.
+HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with HubSpot, allowing store owners to **automatically sync orders as deals in HubSpot CRM**. This plugin uses a **public HubSpot app** to authenticate users and store their API tokens.
 
-== Setup ==
-1. Install the HubSpot public app.
-2. Follow the OAuth authentication flow to authorize the app.
-3. Orders will sync automatically.
+## Features
+- **HubSpot OAuth Authentication**: Securely connects your WooCommerce store to HubSpot.
+- **Order Syncing**: Automatically creates deals in HubSpot for new WooCommerce orders.
+- **Pipeline Selection**: Choose which HubSpot pipeline to use for deal management.
+- **Settings Page**: Configure HubSpot authentication and syncing options from the WordPress admin panel.
+- **GitHub Auto-Updates**: Plugin updates itself via GitHub.
 
-== API Endpoints ==
-| Route                  | Method | Description |
-|------------------------|--------|-------------|
-| `/hubspot/v1/create-order` | POST | Create a WooCommerce order from a HubSpot deal. |
-| `/hubspot/v1/update-order` | POST | Update an existing WooCommerce order. |
-| `/hubspot/v1/delete-order` | DELETE | Delete a WooCommerce order linked to a HubSpot deal. |
-| `/hubspot/v1/get-wc-order` | GET | Retrieve a WooCommerce order using a HubSpot deal ID. |
+## Installation
 
-== Uninstallation ==
-If you uninstall the plugin, all stored OAuth tokens will be deleted.
+### Manual Installation
+1. Download the latest release from [GitHub](https://github.com/weblifter/hubspot-woocommerce-sync).
+2. Upload the `.zip` file to WordPress via **Plugins → Add New → Upload Plugin**.
+3. Activate the plugin.
 
-== Support ==
-For support, visit: [https://weblifter.com.au](https://weblifter.com.au)
+### Using GitHub Updater
+1. Install the [GitHub Updater](https://github.com/afragen/github-updater) plugin.
+2. Add the repository URL in the GitHub Updater settings.
+3. The plugin will now receive updates directly from GitHub.
 
-== Changelog ==
-= 1.0.0 =
-* Initial release
+## Setup & Authentication
+
+1. **Go to WordPress Admin → HubSpot Sync**.
+2. Click the **Connect HubSpot** button.
+3. Authenticate with your HubSpot account.
+4. Once authenticated, choose your **HubSpot pipeline** for WooCommerce orders.
+5. Enable **Automatic Deal Creation** to sync new orders.
+
+## REST API Endpoints
+
+The plugin provides the following API routes:
+
+### Start OAuth Authentication
+`GET /wp-json/hubspot/v1/start-auth`
+
+**Query Parameter:**
+- `store_url` (required) - The WooCommerce store URL.
+
+### OAuth Callback
+`GET /wp-json/hubspot/v1/oauth/callback`
+
+**Handles HubSpot's OAuth response and stores the API tokens.**
+
+### Retrieve Stored Token
+`GET /wp-json/hubspot/v1/get-token?store_url={your_site_url}`
+
+**Returns the stored HubSpot access token.**
+
+## Uninstallation
+To remove the plugin:
+1. Deactivate the plugin in WordPress.
+2. Click "Delete" to remove all associated data.
+
+## License
+This plugin is licensed under **GPL-2.0**.
+
+## Support & Contributions
+For bug reports, feature requests, or contributions, visit the [GitHub Issues](https://github.com/weblifter/hubspot-woocommerce-sync/issues) page.

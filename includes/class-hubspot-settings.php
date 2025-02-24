@@ -9,6 +9,7 @@ class HubSpot_WC_Settings {
     public static function init() {
         add_action('admin_menu', [__CLASS__, 'register_menu']);
         add_action('admin_init', [__CLASS__, 'register_settings']);
+        add_action('wp_ajax_hubspot_check_connection', [__CLASS__, 'hubspot_check_connection']);
     }
 
     /**
@@ -39,6 +40,7 @@ class HubSpot_WC_Settings {
      * Render the settings page
      */
     public static function render_settings_page() {
+        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'authentication';
         ?>
         <div class="wrap">
             <h1>HubSpot WooCommerce Sync</h1>
@@ -51,8 +53,6 @@ class HubSpot_WC_Settings {
                 <?php
                 settings_fields('hubspot_wc_settings');
                 do_settings_sections('hubspot_wc_settings');
-
-                $active_tab = $_GET['tab'] ?? 'authentication';
 
                 if ($active_tab === 'authentication') {
                     self::render_authentication_settings();
@@ -71,21 +71,39 @@ class HubSpot_WC_Settings {
      * Get active tab class
      */
     private static function get_active_tab($tab) {
-        return ($_GET['tab'] ?? 'authentication') === $tab ? 'nav-tab-active' : '';
+        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'authentication';
+        return ($active_tab === $tab) ? 'nav-tab-active' : '';
     }
 
     /**
      * Render HubSpot Authentication Tab
      */
     private static function render_authentication_settings() {
-        $is_connected = get_option('hubspot_connected', 'no');
-        $connection_status = $is_connected === 'yes' ? '<span style="color: green;">Connected</span>' : '<span style="color: red;">Not Connected</span>';
+        $auth_url = "https://weblifter.com.au/wp-json/hubspot/v1/start-auth?store_url=" . urlencode(get_site_url());
         ?>
         <h3>HubSpot Authentication & Setup</h3>
-        <p>Status: <?php echo $connection_status; ?></p>
-        <a href="<?php echo esc_url(HubSpot_WC_Auth::get_oauth_url(get_site_url())); ?>" class="button-primary">
-            <?php echo $is_connected === 'yes' ? 'Reconnect HubSpot' : 'Connect HubSpot'; ?>
+        <p>Status: <span id="hubspot-connection-status" style="color: red;">Checking...</span></p>
+        <a href="<?php echo esc_url($auth_url); ?>" class="button-primary" id="hubspot-auth-button">
+            Connect HubSpot
         </a>
+
+        <script>
+        jQuery(document).ready(function($) {
+            function checkHubSpotConnection() {
+                $.post(ajaxurl, { action: 'hubspot_check_connection' }, function(response) {
+                    if (response === 'yes') {
+                        $('#hubspot-connection-status').html('<span style="color: green;">Connected</span>');
+                        $('#hubspot-auth-button').text('Reconnect HubSpot');
+                    } else {
+                        $('#hubspot-connection-status').html('<span style="color: red;">Not Connected</span>');
+                    }
+                });
+            }
+
+            checkHubSpotConnection();
+            setInterval(checkHubSpotConnection, 5000);
+        });
+        </script>
         <?php
     }
 
@@ -108,16 +126,19 @@ class HubSpot_WC_Settings {
         ]);
 
         if (is_wp_error($response)) {
-            return ['error' => 'Failed to fetch pipelines'];
+            return ['error' => 'Failed to fetch pipelines: ' . $response->get_error_message()];
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
-        $pipelines = [];
 
-        if (isset($body['results'])) {
-            foreach ($body['results'] as $pipeline) {
-                $pipelines[$pipeline['id']] = $pipeline['label'];
-            }
+        if (!isset($body['results']) || !is_array($body['results'])) {
+            return ['error' => 'Invalid API response'];
+        }
+
+        $pipelines = [];
+        foreach ($body['results'] as $pipeline) {
+            if (!isset($pipeline['id'], $pipeline['label'])) continue;
+            $pipelines[$pipeline['id']] = $pipeline['label'];
         }
 
         return $pipelines;
@@ -158,9 +179,15 @@ class HubSpot_WC_Settings {
         </table>
         <?php
     }
+
+    /**
+     * AJAX Handler: Check Connection Status
+     */
+    public static function hubspot_check_connection() {
+        echo get_option('hubspot_connected', 'no');
+        wp_die();
+    }
 }
 
 // Initialize settings page
 HubSpot_WC_Settings::init();
-
-?>

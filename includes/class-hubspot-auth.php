@@ -40,13 +40,14 @@ class HubSpot_WC_Auth {
         return $wpdb->get_row($wpdb->prepare("SELECT * FROM {$table_name} WHERE store_url = %s LIMIT 1", $store_url), ARRAY_A);
     }
 
-
     /**
      * Update or insert OAuth token for a store
      */
     public static function update_token($store_url, $access_token, $refresh_token, $expires_in) {
         global $wpdb;
         $table_name = $wpdb->prefix . self::$table_name;
+
+        error_log("[HubSpot OAuth] 🔄 Storing token for Store: " . $store_url);
 
         $expires_at = time() + $expires_in;
         $existing = self::get_token($store_url);
@@ -66,7 +67,6 @@ class HubSpot_WC_Auth {
             ]);
         }
 
-        // Logging for debugging
         if ($result === false) {
             error_log("[HubSpot OAuth] ❌ Database error: " . $wpdb->last_error);
         } else {
@@ -126,66 +126,54 @@ class HubSpot_WC_Auth {
         $token = self::get_token($store_url);
         return $token ? $token['access_token'] : null;
     }
+    
+    public static function start_hubspot_auth() {
+        $store_url = get_site_url(); // Get WooCommerce store URL
 
-    /**
-     * Get OAuth authorization URL
-     */
-    public static function get_oauth_url($store_url) {
-        $vars = include HUBSPOT_WC_SYNC_PATH . 'includes/variables.php';
-        return "https://app-ap1.hubspot.com/oauth/authorize?client_id=" . $vars['client_id'] .
-               "&redirect_uri=" . urlencode($vars['redirect_uri']) .
-               "&scope=" . urlencode($vars['scopes']) .
-               "&state=" . urlencode($store_url);
-    }
+        $auth_url = "https://weblifter.com.au/wp-json/hubspot/v1/start-auth?store_url=" . urlencode($store_url);
 
-    /**
-     * Handle OAuth callback from HubSpot
-     */
-    public static function handle_oauth_callback() {
-        if (!isset($_GET['code']) || !isset($_GET['state'])) {
-            return new WP_REST_Response(['error' => 'Missing OAuth code or state'], 400);
-        }
-
-        $code = sanitize_text_field($_GET['code']);
-        $store_url = esc_url_raw($_GET['state']);
-
-        $vars = include HUBSPOT_WC_SYNC_PATH . 'includes/variables.php';
-
-        $response = wp_remote_post('https://api.hubapi.com/oauth/v1/token', [
-            'body' => [
-                'grant_type' => 'authorization_code',
-                'client_id' => $vars['client_id'],
-                'client_secret' => $vars['client_secret'],
-                'redirect_uri' => $vars['redirect_uri'],
-                'code' => $code
-            ]
-        ]);
-
-        if (is_wp_error($response)) {
-            error_log("[HubSpot OAuth] ❌ OAuth request failed: " . $response->get_error_message());
-            return new WP_REST_Response(['error' => 'OAuth request failed'], 500);
-        }
-
-        $body = json_decode(wp_remote_retrieve_body($response), true);
-
-        if (!isset($body['access_token']) || !isset($body['refresh_token'])) {
-            error_log("[HubSpot OAuth] ❌ Invalid OAuth response: " . print_r($body, true));
-            return new WP_REST_Response(['error' => 'Invalid OAuth response'], 500);
-        }
-
-        // Store token
-        self::update_token($store_url, $body['access_token'], $body['refresh_token'], $body['expires_in']);
-
-        return new WP_REST_Response(['message' => 'OAuth authentication successful'], 200);
+        wp_redirect($auth_url);
+        exit;
     }
 }
 
-// Register REST API route for OAuth callback
+/**
+ * Store OAuth tokens received from Weblifter
+ */
+function hubspot_store_tokens(WP_REST_Request $request) {
+    $params = json_decode($request->get_body(), true);
+
+    error_log("[HubSpot OAuth] 🔄 Receiving token request: " . json_encode($params));
+
+    $access_token = $params['access_token'] ?? null;
+    $refresh_token = $params['refresh_token'] ?? null;
+    $expires_at = $params['expires_at'] ?? null;
+    $portal_id = $params['portal_id'] ?? null;
+    $store_url = get_site_url(); // Store URL for reference
+
+    if (!$access_token || !$refresh_token || !$expires_at || !$portal_id) {
+        error_log("[HubSpot OAuth] ❌ Missing parameters in /store-token request");
+        return new WP_REST_Response(['error' => 'Missing parameters'], 400);
+    }
+
+    // Store tokens in WooCommerce database
+    HubSpot_WC_Auth::update_token($store_url, $access_token, $refresh_token, $expires_at);
+
+    // Mark connection as successful
+    update_option('hubspot_connected', 'yes');
+
+    error_log("[HubSpot OAuth] ✅ Tokens successfully stored in WooCommerce for Portal ID: " . $portal_id);
+
+    return new WP_REST_Response(['message' => 'Tokens stored successfully'], 200);
+}
+
+
+// Register REST API route for token storage
 add_action('rest_api_init', function () {
-    register_rest_route('hubspot/v1', '/oauth/callback', [
-        'methods' => 'GET',
-        'callback' => ['HubSpot_WC_Auth', 'handle_oauth_callback'],
-        'permission_callback' => '__return_true'
+    register_rest_route('hubspot/v1', '/store-token', [
+        'methods'  => 'POST',
+        'callback' => 'hubspot_store_tokens',
+        'permission_callback' => '__return_true',
     ]);
 });
 
