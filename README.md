@@ -3,7 +3,7 @@
 **Version:** 1.0.0  
 **Author:** [Weblifter](https://weblifter.com.au)  
 **Plugin URI:** [GitHub Repository](https://github.com/weblifter/hubspot-woocommerce-sync)  
-**License:** GPL-2.0  
+**License:** GPL-3.0  
 
 ## Overview
 
