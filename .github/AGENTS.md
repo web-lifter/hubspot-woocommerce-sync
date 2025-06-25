@@ -322,7 +322,7 @@ Turning this integration code into a well-structured standalone plugin will make
        // Create hubspot_tokens table if not exists (you can use $wpdb for this).
        // Schedule cron for token refresh:
        if (!wp_next_scheduled('hubspot_token_refresh_event')) {
-           wp_schedule_event(time(), 'ten_minutes', 'hubspot_token_refresh_event');
+           wp_schedule_event(time(), 'thirty_minutes', 'hubspot_token_refresh_event');
        }
    }
    register_deactivation_hook(__FILE__, 'hubwoo_deactivation');

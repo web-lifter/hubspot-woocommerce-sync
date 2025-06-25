@@ -82,10 +82,14 @@ add_action('hubspot_token_refresh_event', 'check_and_refresh_hubspot_token');
         $portal_id = $token_data['portal_id'] ?? null;
         $access_token = $token_data['access_token'];
         $expires_at = $token_data['expires_at'];
-        $refresh_token = $token_data['refresh_token'];
-
-        if (!$portal_id) {
-            error_log("[HubSpot OAuth] ❌ Portal ID missing. Cannot refresh token.", 3, $log_file);
+/**
+ * Schedule HubSpot token refresh every 30 minutes.
+ */
+function schedule_hubspot_token_refresh() {
+    if (!wp_next_scheduled('hubspot_token_refresh_event')) {
+        wp_schedule_event(time(), 'thirty_minutes', 'hubspot_token_refresh_event');
+    }
+}
             return false;
         }
 function refresh_hubspot_access_token($portal_id, $refresh_token) {
