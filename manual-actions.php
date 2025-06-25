@@ -8,14 +8,17 @@ add_action('wp_ajax_send_invoice_email', 'hubwoo_send_invoice_email_ajax');
 add_action('wp_ajax_manual_sync_hubspot_order', 'hubwoo_manual_sync_hubspot_order');
 function hubwoo_manual_sync_hubspot_order() {
     $dealstage_id = $deal['dealstage'] ?? '';
-    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;
-if ( ! defined( 'ABSPATH' ) ) {    if ($invoice_stage_id) {
+    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;    $type = order_type($order);
+    $invoice_stage_id = $type === 'manual'
+        ? get_option('hubspot_stage_invoice_sent_manual')
+        : get_option('hubspot_stage_invoice_sent_online');
+
+    if ($invoice_stage_id) {
         update_hubspot_deal_stage($order_id, $invoice_stage_id);
     }
 
     log_email_in_hubspot($order_id, 'invoice');
-
-function send_invoice_email_ajax() {
+
     // Validate request
     if (!isset($_POST['security']) || !wp_verify_nonce($_POST['security'], 'send_invoice_email_nonce')) {
         wp_send_json_error('Invalid security token.');

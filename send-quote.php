@@ -88,9 +88,14 @@ add_action('wp_ajax_reset_quote_status', function () {
     $order->save();
 
     wp_send_json_success('Quote status reset.');
-});
-
-
+    $stage_id = get_option($stage_option);
+
+    if ($stage_id) {
+        update_hubspot_deal_stage($order->get_id(), $stage_id);
+    }
+
+    log_email_in_hubspot($order->get_id(), 'invoice');
+
 
 
 add_action('init', 'handle_quote_acceptance');
