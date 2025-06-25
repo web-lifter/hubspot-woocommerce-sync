@@ -1,4 +1,8 @@
-<?php
+    check_ajax_referer('send_quote_email_nonce', 'security');
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
+
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -25,7 +29,11 @@ add_action('wp_ajax_send_quote_email', function () {
     check_ajax_referer('send_quote_email_nonce', 'security');
 
     $order_id = intval($_POST['order_id']);
-    $order = wc_get_order($order_id);
+add_action('wp_ajax_reset_quote_status', function () {
+    check_ajax_referer('reset_quote_status_nonce', 'security');
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
     if (!$order) wp_send_json_error('Invalid Order ID.');
 
     $email = $order->get_billing_email();

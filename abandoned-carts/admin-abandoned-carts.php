@@ -49,7 +49,11 @@ function render_abandoned_cart_admin_view() {
     // Cart Table
     if (!$carts) {
         echo '<p>No abandoned carts found for this filter.</p></div>';
-        return;
+add_action('wp_ajax_update_abandoned_cart_status', function () {
+    check_ajax_referer('hubspot_admin_nonce', 'security');
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
     }
 
     echo '<table class="wp-list-table widefat fixed striped">';

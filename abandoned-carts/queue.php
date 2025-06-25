@@ -1,4 +1,8 @@
-<?php
+add_action('wp_ajax_manually_trigger_abandoned_email', function () {
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
+    global $wpdb;
 
 add_action('wp_ajax_manually_trigger_abandoned_email', function () {
     global $wpdb;

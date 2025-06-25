@@ -16,8 +16,13 @@ function render_combined_order_management_page() {
     <div class="wrap">
         <h1>HubSpot Order Management</h1>
         <h2>Import Order from HubSpot</h2>
-        <form method="post" id="hubspot-import-form">
-            <input type="text" name="hubspot_deal_id" placeholder="Enter HubSpot Deal ID" required style="width: 300px;" />
+add_action('wp_ajax_import_hubspot_order', 'import_hubspot_order_ajax');
+function import_hubspot_order_ajax() {
+    check_ajax_referer('import_hubspot_order_nonce', 'security');
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
+
             <input type="submit" class="button button-primary" value="Import Order">
         </form>
         <hr>

@@ -1,7 +1,23 @@
-<?php
-/**
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
+    $dealstage_id = $deal['dealstage'] ?? '';
+
+    if (!isset($_POST['security']) || !wp_verify_nonce($_POST['security'], 'send_invoice_email_nonce')) {
+        wp_send_json_error('Invalid security token.');
+    }
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
+function manual_sync_hubspot_order() {
+    check_ajax_referer('manual_sync_hubspot_order_nonce', 'security');
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
+
 }
 function hubwoo_send_invoice_email_ajax() {
 add_action('wp_ajax_send_invoice_email', 'hubwoo_send_invoice_email_ajax');
@@ -86,7 +102,11 @@ function hubwoo_create_hubspot_deal_manual() {
     $dealstage_label = $labels['stages'][$dealstage_id] ?? $dealstage_id;
 
     // 🔄 Clear existing line and shipping items
-    foreach ($order->get_items() as $id => $item) $order->remove_item($id);
+function create_hubspot_deal_manual() {
+    check_ajax_referer('create_hubspot_deal_nonce', 'security');
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
     foreach ($order->get_items('shipping') as $id => $item) $order->remove_item($id);
 
     // 📦 Billing
