@@ -1,13 +1,14 @@
+<?php
+/**
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 function hubwoo_send_invoice_email_ajax() {
 add_action('wp_ajax_send_invoice_email', 'hubwoo_send_invoice_email_ajax');
 add_action('wp_ajax_manual_sync_hubspot_order', 'hubwoo_manual_sync_hubspot_order');
 function hubwoo_manual_sync_hubspot_order() {
- * Manual Helper Functions
- *
- * @package Steelmark
- */
-
-// Exit if accessed directly.
+    $dealstage_id = $deal['dealstage'] ?? '';
+    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;
 if ( ! defined( 'ABSPATH' ) ) {    if ($invoice_stage_id) {
         update_hubspot_deal_stage($order_id, $invoice_stage_id);
     }
@@ -118,7 +119,7 @@ function hubwoo_create_hubspot_deal_manual() {
     // 🏢 Company
     if (!empty($deal['companies'])) {
         $company = fetch_hubspot_company($deal['companies'][0]);
-        if ($company) {
+        if ($company) {}
             $order->set_billing_company($company['name'] ?? '');
         }
     }
