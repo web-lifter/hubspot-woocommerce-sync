@@ -22,8 +22,14 @@ if (!defined('ABSPATH')) exit;
     }
 
 add_action('woocommerce_new_order', 'set_order_type_for_online_orders', 20, 2);
-
-function set_order_type_for_online_orders($order_id, $order) {
+    // Detect if order was created from admin, CLI, or API (e.g. Zapier)
+    if (is_admin() || defined('REST_REQUEST') || (php_sapi_name() === 'cli')) {
+        if (strtolower($existing_order_type) !== 'manual') {
+            $order->update_meta_data('order_type', 'manual');
+            $order->save_meta_data();
+        }
+        return;
+    }
     if (!is_a($order, 'WC_Order')) {
         $order = wc_get_order($order_id);
     }
