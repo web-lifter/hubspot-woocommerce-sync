@@ -72,9 +72,10 @@ function manage_hubspot_access_token() {
             error_log("[HubSpot OAuth] ❌ Portal ID missing. Cannot refresh token.", 3, $log_file);
             return false;
         }
-
-        if (time() < $expires_at) {
-            error_log("[HubSpot OAuth] ✅ Using stored access token.", 3, $log_file);
+function refresh_hubspot_access_token($portal_id, $refresh_token) {
+    global $wpdb;
+    global $hubspot_config; // Ensure access to plugin configuration
+    $table_name = $wpdb->prefix . "hubspot_tokens";
             return $access_token;
         }
 
