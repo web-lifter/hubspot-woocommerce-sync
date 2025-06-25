@@ -6,9 +6,11 @@
  */
 
 // Exit if accessed directly.
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
-}
+if ( ! defined( 'ABSPATH' ) ) {    if ($invoice_stage_id) {
+        update_hubspot_deal_stage($order_id, $invoice_stage_id);
+    }
+
+    log_email_in_hubspot($order_id, 'invoice');
 
 function send_invoice_email_ajax() {
     // Validate request
