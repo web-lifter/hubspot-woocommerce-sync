@@ -3,18 +3,31 @@
         'callback' => 'steelmark_start_hubspot_auth',
         'permission_callback' => function() { return current_user_can('manage_options'); },
     ]);
-
+add_action('rest_api_init', function () {
+    register_rest_route('hubspot/v1', '/start-auth', [
+        'methods'  => 'GET',
+        'callback' => 'steelmark_start_hubspot_auth',
+        'permission_callback' => function() {
+            return current_user_can('manage_options');
+        },
+    ]);
+
     register_rest_route('hubspot/v1', '/oauth/callback', [
         'methods'  => 'GET',
         'callback' => 'steelmark_handle_oauth_callback',
-        'permission_callback' => function() { return current_user_can('manage_options'); },
+        'permission_callback' => function() {
+            return current_user_can('manage_options');
+        },
     ]);
- */
-add_action('rest_api_init', function () {
-    register_rest_route('hubspot/v1', '/start-auth', [
-        'methods'  => 'GET',
-        'callback' => 'steelmark_start_hubspot_auth',
-        'permission_callback' => '__return_true',
+
+    register_rest_route('hubspot/v1', '/get-token', [
+        'methods'  => 'GET',
+        'callback' => 'steelmark_get_stored_token',
+        'permission_callback' => function() {
+            return current_user_can('manage_options');
+        },
+    ]);
+});
     ]);
 
     register_rest_route('hubspot/v1', '/oauth/callback', [
@@ -162,13 +175,6 @@ add_action('wp', 'schedule_hubspot_token_refresh');function steelmark_get_store
         'interval' => 1800, // 1800 seconds = 30 minutes
         'display' => 'Every 30 Minutes'
     ];
-    return $schedules;
-});
-
-
-/**
- * Refresh HubSpot Access Token
- */
 function refresh_hubspot_access_token($portal_id, $refresh_token) {
     global $wpdb;
     $table_name = $wpdb->prefix . "hubspot_tokens";

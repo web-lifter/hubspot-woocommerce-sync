@@ -38,7 +38,7 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
 
 ## REST API Endpoints
 
-The plugin provides the following API routes:
+The plugin provides the following API routes. All routes require an authenticated user with the `manage_options` capability:
 
 ### Start OAuth Authentication
 `GET /wp-json/hubspot/v1/start-auth`
@@ -51,10 +51,10 @@ The plugin provides the following API routes:
 
 **Handles HubSpot's OAuth response and stores the API tokens.**
 
-### Retrieve Stored Token
-`GET /wp-json/hubspot/v1/get-token?store_url={your_site_url}`
+### Check Connection Status
+`GET /wp-json/hubspot/v1/get-token`
 
-**Returns the stored HubSpot access token.**
+**Returns `Connected` or `Not connected` and the HubSpot portal ID if available. Tokens are never exposed.**
 
 ## Uninstallation
 To remove the plugin:
