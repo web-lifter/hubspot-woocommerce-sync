@@ -1,11 +1,14 @@
-<?php
+    register_rest_route('hubspot/v1', '/start-auth', [
+        'methods'  => 'GET',
+        'callback' => 'steelmark_start_hubspot_auth',
+        'permission_callback' => function() { return current_user_can('manage_options'); },
+    ]);
 
-if (!defined('ABSPATH')) {
-    exit; // Exit if accessed directly
-}
-
-/**
- * Register REST API Routes
+    register_rest_route('hubspot/v1', '/oauth/callback', [
+        'methods'  => 'GET',
+        'callback' => 'steelmark_handle_oauth_callback',
+        'permission_callback' => function() { return current_user_can('manage_options'); },
+    ]);
  */
 add_action('rest_api_init', function () {
     register_rest_route('hubspot/v1', '/start-auth', [
@@ -129,12 +132,24 @@ function schedule_hubspot_token_refresh() {
         wp_schedule_event(time(), 'ten_minutes', 'hubspot_token_refresh_event');
     }
 }
-add_action('wp', 'schedule_hubspot_token_refresh');
-add_action('hubspot_token_refresh_event', 'check_and_refresh_hubspot_token');
-
-// Register a custom cron interval
-add_filter('cron_schedules', function ($schedules) {
-    $schedules['ten_minutes'] = [
+add_action('wp', 'schedule_hubspot_token_refresh');function steelmark_get_stored_token(WP_REST_Request $request) {
+    global $wpdb, $table_name;
+
+    if (!current_user_can('manage_options')) {
+        return new WP_REST_Response(['error' => 'Unauthorized'], 403);
+    }
+
+    $token = $wpdb->get_row("SELECT portal_id FROM {$table_name} LIMIT 1", ARRAY_A);
+    if (!$token) {
+        return new WP_REST_Response(['status' => 'Not connected'], 200);
+    }
+
+    return new WP_REST_Response([
+        'status'    => 'Connected',
+        'portal_id' => intval($token['portal_id'])
+    ], 200);
+}
+
         'interval' => 1800, // 1800 seconds = 30 minutes
         'display' => 'Every 30 Minutes'
     ];
