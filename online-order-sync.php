@@ -7,11 +7,20 @@ if (!defined('ABSPATH')) exit;
 
 /*
 *
-* Online Order Functions
-*
-*/
-
-/*
+    // Detect if order was created from admin, REST API, or CLI
+    if (is_admin() || defined('REST_REQUEST') || (php_sapi_name() === 'cli')) {
+        if (strtolower($existing_order_type) !== 'manual') {
+            $order->update_meta_data('order_type', 'manual');
+            $order->save_meta_data();
+        }
+        return;
+    }
+
+    // Skip if already marked as 'manual'
+    if (strtolower($existing_order_type) === 'manual') {
+        return;
+    }
+
 add_action('woocommerce_new_order', 'set_order_type_for_online_orders', 20, 2);
 
 function set_order_type_for_online_orders($order_id, $order) {
