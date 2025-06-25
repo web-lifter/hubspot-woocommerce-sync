@@ -1,4 +1,5 @@
-<?php
+        'hubwoo_render_combined_order_management_page'
+
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;

@@ -8,8 +8,9 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-function get_order_quote_status_info($order) {
-    $status = $order->get_meta('quote_status') ?: 'Quote Not Sent';
+function get_order_quote_status_info($order) {    $accept_url = site_url('/?accept_quote=yes&order_id=' . $order_id);add_action('init', 'hubwoo_handle_quote_acceptance_placeholder');
+function hubwoo_handle_quote_acceptance_placeholder() {
+function hubwoo_send_invoice_placeholder($order_id) {
     $last_sent = $order->get_meta('quote_last_sent');
     $last_modified = $order->get_date_modified();
     $is_outdated = false;
@@ -50,11 +51,13 @@ function hubwoo_handle_quote_acceptance() {
         }
 
         $order->save(); // <-- FIXED
+add_action('init', 'hubwoo_handle_quote_acceptance');
+
+function hubwoo_handle_quote_acceptance() {
+        $type = function_exists('hubwoo_order_type') ? hubwoo_order_type($order) : 'manual';
         hubwoo_send_invoice($order_id);
             hubwoo_send_invoice($order);
 function hubwoo_send_invoice($order_id) {
-
-    $headers = [
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset=UTF-8',
         'From: Steelmark <website@steelmark.com.au>',

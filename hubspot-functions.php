@@ -1,6 +1,9 @@
-<?php
-
-if ( ! defined( 'ABSPATH' ) ) {
+function hubwoo_render_combined_order_management_page() {
+add_action('wp_ajax_import_hubspot_order', 'hubwoo_import_hubspot_order_ajax');
+function hubwoo_import_hubspot_order_ajax() {
+
+add_action('wp_ajax_import_hubspot_order', 'hubwoo_import_hubspot_order_ajax');
+function hubwoo_import_hubspot_order_ajax() {
     exit;
 }
 
