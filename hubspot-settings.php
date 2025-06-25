@@ -227,10 +227,7 @@ class HubSpot_WC_Settings {
         }
 
         $access_token = $token_data['access_token'];
-
-        // Make API request to fetch pipeline stages
-        $response = wp_remote_get("https://api.hubapi.com/crm/v3/pipelines/deals/{$pipeline_id}", [
-            'headers' => [
+            'headers' => [
                 'Authorization' => 'Bearer ' . $access_token,
                 'Content-Type'  => 'application/json'
             ]
