@@ -42,7 +42,9 @@ add_action('woocommerce_payment_complete', 'hubspot_auto_sync_online_order', 10,
 */
 
 add_action('woocommerce_new_order', 'set_order_type_for_online_orders', 20, 2);
-
+// Trigger deal creation after successful payment
+add_action('woocommerce_payment_complete', 'hubspot_auto_sync_online_order', 10, 1);
+
 function set_order_type_for_online_orders($order_id, $order) {
     if (!is_a($order, 'WC_Order')) {
         $order = wc_get_order($order_id);
