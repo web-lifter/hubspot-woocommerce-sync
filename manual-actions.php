@@ -98,8 +98,11 @@ function hubwoo_create_hubspot_deal_manual() {
     $status_key = "manual_wc-{$status}";
 
         $contact = fetch_hubspot_contact($deal['contacts'][0]);
-        if ($contact) {
-            $order->set_billing_first_name($contact['firstname'] ?? '');
+    $pipeline_id = get_option('hubspot_pipeline_manual');
+    $status     = $order->get_status();
+    $status_key = "manual_wc-{$status}";
+    $mapping    = get_option('hubspot_status_stage_mapping', []);
+    $deal_stage = $mapping[$status_key] ?? hubspot_get_first_stage_of_pipeline($pipeline_id, $access_token);
             $order->set_billing_last_name($contact['lastname'] ?? '');
             $order->set_billing_email($contact['email'] ?? '');
             $order->set_billing_phone($contact['phone'] ?? '');
