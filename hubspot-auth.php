@@ -28,18 +28,13 @@ add_action('rest_api_init', function () {
         },
     ]);
 });
-    ]);
-
-    register_rest_route('hubspot/v1', '/oauth/callback', [
-        'methods'  => 'GET',
-        'callback' => 'steelmark_handle_oauth_callback',
-        'permission_callback' => '__return_true',
-    ]);
-
-    register_rest_route('hubspot/v1', '/get-token', [
-        'methods'  => 'GET',
-        'callback' => 'steelmark_get_stored_token',
-        'permission_callback' => '__return_true',
+use WP_REST_Request;
+use WP_REST_Response;
+
+global $wpdb, $hubspot_config;
+$table_name = $wpdb->prefix . "hubspot_tokens";
+$log_file   = WP_CONTENT_DIR . '/fetchdeal.log';
+
     ]);
 });
 
@@ -98,9 +93,9 @@ function refresh_hubspot_access_token($portal_id, $refresh_token) {
     global $hubspot_config; // Ensure access to plugin configuration
     $table_name = $wpdb->prefix . "hubspot_tokens";
             return $access_token;
-        }
-
-        error_log("[HubSpot OAuth] 🔄 Token expired. Refreshing...", 3, $log_file);
+function refresh_hubspot_access_token($portal_id, $refresh_token) {
+    global $wpdb, $hubspot_config;
+    $table_name = $wpdb->prefix . "hubspot_tokens";
         return refresh_hubspot_access_token($portal_id, $refresh_token);
     }
 
