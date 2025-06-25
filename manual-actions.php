@@ -88,7 +88,9 @@ function manual_sync_hubspot_order() {
     $order->set_billing_country($deal['country_region']);
 
     // ✍️ Contact
-    if (!empty($deal['contacts'])) {
+    $status = $order->get_status();
+    $status_key = "manual_wc-{$status}";
+
         $contact = fetch_hubspot_contact($deal['contacts'][0]);
         if ($contact) {
             $order->set_billing_first_name($contact['firstname'] ?? '');
