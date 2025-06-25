@@ -36,6 +36,11 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
 4. Once authenticated, choose your **HubSpot pipeline** for WooCommerce orders.
 5. Enable **Automatic Deal Creation** to sync new orders.
 
+### Admin-Created Orders
+Orders created manually in WooCommerce are **not** synced automatically. After
+creating an order in the admin, go to **HubSpot → Order Management** and click
+the **Create Deal** button to push the order to HubSpot.
+
 ### HubSpot App Credentials
 Your HubSpot app's **Client ID** and **Client Secret** are stored as plugin options. They can be updated anytime from the HubSpot Sync settings page.
 
@@ -54,10 +59,9 @@ The plugin provides the following API routes. All routes require an authenticate
 
 **Handles HubSpot's OAuth response and stores the API tokens.**
 
-### Check Connection Status
-`GET /wp-json/hubspot/v1/get-token`
+The previous connection status endpoint has been removed for security. Only
+administrators can access the OAuth routes.
 
-**Returns `Connected` or `Not connected` and the HubSpot portal ID if available. Tokens are never exposed.**
 
 ## Uninstallation
 To remove the plugin:
