@@ -62,7 +62,7 @@ To remove the plugin:
 2. Click "Delete" to remove all associated data.
 
 ## License
-This plugin is licensed under **GPL-2.0**.
+This plugin is licensed under **GPL-3.0**.
 
 ## Support & Contributions
 For bug reports, feature requests, or contributions, visit the [GitHub Issues](https://github.com/weblifter/hubspot-woocommerce-sync/issues) page.
