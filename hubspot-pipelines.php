@@ -15,15 +15,28 @@ function sync_order_status_to_hubspot_pipeline($order_id, $old_status, $new_stat
 
     if (get_option('hubspot_pipeline_sync_enabled') !== 'yes') {
         error_log("{$log_prefix} ❌ Sync is disabled in settings.");
-        return;
-    }
-
-    error_log("{$log_prefix} 🔄 Status changed from '{$old_status}' to '{$new_status}'");
-
-    $order_type = is_order_manual($order) ? 'manual' : 'online';
-    error_log("{$log_prefix} 🧭 Detected order type: {$order_type}");
-
-    $status_key = "{$order_type}_wc-{$new_status}";
+    $response = wp_remote_request($update_url, [
+        'method' => 'PATCH',
+        'headers' => [
+            'Authorization' => "Bearer {$access_token}",
+            'Content-Type'  => 'application/json'
+        ],
+        'body' => json_encode($update_payload)
+    ]);
+
+    if (is_wp_error($response)) {
+        $error_message = $response->get_error_message();
+        error_log("{$log_prefix} ❌ WP Error: " . $error_message);
+        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
+        return;
+    }
+    if (isset($body['status']) && $body['status'] === 'error') {
+        $error_message = print_r($body, true);
+        error_log("{$log_prefix} ❌ API error: " . $error_message);
+        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
+    } else {
+        error_log("{$log_prefix} ✅ Deal #{$deal_id} updated to stage '{$deal_stage}'");
+    }
     $mapping = get_option('hubspot_status_stage_mapping', []);
     $deal_stage = $mapping[$status_key] ?? '';
 

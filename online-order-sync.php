@@ -59,10 +59,29 @@ function set_order_type_for_online_orders($order_id, $order) {
     $existing_order_type = $order->get_meta('order_type');
 
     // Skip if already marked as 'manual'
-    if (strtolower($existing_order_type) === 'manual') {
-        return;
-    }
-
+    $access_token = manage_hubspot_access_token();
+    if (is_wp_error($access_token) || !$access_token) {
+        $error_message = is_wp_error($access_token) ? $access_token->get_error_message() : 'Access token not available';
+        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
+        return;
+    }
+    $contact_id = hubspot_get_or_create_contact($order, $email, $access_token);
+    if (is_wp_error($contact_id) || !$contact_id) {
+        $error_message = is_wp_error($contact_id) ? $contact_id->get_error_message() : 'Unable to create or fetch contact';
+        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
+        return;
+    }
+    $pipeline_id = get_option('hubspot_pipeline_online');
+    if (!$pipeline_id) {
+        $order->add_order_note('❌ HubSpot sync failed: HubSpot pipeline not configured.');
+        return;
+    }
+    $deal_id = hubspot_create_deal_from_order($order, $pipeline_id, $deal_stage, $contact_id, $access_token);
+    if (is_wp_error($deal_id) || !$deal_id) {
+        $error_message = is_wp_error($deal_id) ? $deal_id->get_error_message() : 'Deal creation failed';
+        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
+        return;
+    }
     // Detect if order was created from admin, CLI, or API (e.g. Zapier)
     if (is_admin() || defined('REST_REQUEST') || (php_sapi_name() === 'cli')) {
         return;

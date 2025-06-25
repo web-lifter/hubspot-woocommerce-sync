@@ -1,16 +1,30 @@
 <?php
 
-add_action('woocommerce_order_status_completed', 'update_hubspot_with_payway_order_number');
+add_action('woocommerce_order_status_completed', 'update_hubspot_with_payway_order_number');    $token = manage_hubspot_access_token();
+    if (is_wp_error($token) || !$token) {
+        $error_message = is_wp_error($token) ? $token->get_error_message() : 'Access token not available';
+        error_log("[HUBSPOT] ❌ Access token not available");
+        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
+        return;
+    }
+    $response = wp_remote_request($update_url, [
+        'method' => 'PATCH',
+        'headers' => [
+            'Authorization' => "Bearer {$token}",
+            'Content-Type' => 'application/json'
+        ],
+        'body' => json_encode($payload)
+    ]);
 
-function update_hubspot_with_payway_order_number($order_id) {
-    $order = wc_get_order($order_id);
-    if (!$order) return;
-
-    // Ensure it's a manual order
-    $is_manual = $order->get_meta('order_type') === 'manual';
-    if (!$is_manual) {
-        error_log("[HUBSPOT] Skipping order #{$order_id} — not a manual order");
-        return;
+    $body = json_decode(wp_remote_retrieve_body($response), true);
+
+    if (is_wp_error($response) || !empty($body['status'])) {
+        $error_message = is_wp_error($response) ? $response->get_error_message() : print_r($body, true);
+        error_log("[HUBSPOT] ❌ Failed to update PayWay number for Deal ID {$deal_id}. Response: " . $error_message);
+        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
+    } else {
+        error_log("[HUBSPOT] ✅ PayWay order number '{$payway_order_number}' synced for Deal ID {$deal_id}");
+    }
     }
 
     // Get PayWay order number
