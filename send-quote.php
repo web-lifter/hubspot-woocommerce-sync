@@ -31,17 +31,20 @@ add_action('wp_ajax_send_quote_email', function () {
     $email = $order->get_billing_email();
     if (!$email) wp_send_json_error('No customer email found.');
 
-    $accept_url = site_url('/?accept_quote=yes&order_id=' . $order_id);
-    $subject = sprintf('[Steelmark Quote] Quote #%s for %s',
-        $order->get_order_number(),
-        $order->get_billing_first_name()
-    );
-
-    ob_start();
-    wc_get_template('emails/email-header.php', [], '', get_stylesheet_directory() . '/woocommerce/');
-    wc_get_template('emails/customer-quote.php', ['order' => $order, 'accept_url' => $accept_url], '', get_stylesheet_directory() . '/woocommerce/');
-    wc_get_template('emails/email-footer.php', [], '', get_stylesheet_directory() . '/woocommerce/');
-    $message = ob_get_clean();
+    $accept_url = site_url('/?accept_quote=yes&order_id=' . $order_id);add_action('init', 'hubwoo_handle_quote_acceptance');
+function hubwoo_handle_quote_acceptance() {
+        $manual = is_order_manual($order);
+        $quote_accepted_stage_id = $manual
+            ? get_option('hubspot_stage_quote_accepted_manual')
+            : get_option('hubspot_stage_quote_accepted_online');
+        if ($quote_accepted_stage_id) {
+            update_hubspot_deal_stage($order_id, $quote_accepted_stage_id);
+        }
+
+        $order->save(); // <-- FIXED
+        hubwoo_send_invoice($order_id);
+            hubwoo_send_invoice($order);
+function hubwoo_send_invoice($order_id) {
 
     $headers = [
         'MIME-Version: 1.0',
