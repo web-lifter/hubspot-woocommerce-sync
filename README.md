@@ -31,10 +31,13 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
 ## Setup & Authentication
 
 1. **Go to WordPress Admin → HubSpot Sync**.
-2. Click the **Connect HubSpot** button.
-3. Authenticate with your HubSpot account.
+2. Enter your HubSpot **Client ID** and **Client Secret** in the settings form.
+3. Click the **Connect HubSpot** button and follow the authorization flow.
 4. Once authenticated, choose your **HubSpot pipeline** for WooCommerce orders.
 5. Enable **Automatic Deal Creation** to sync new orders.
+
+### HubSpot App Credentials
+Your HubSpot app's **Client ID** and **Client Secret** are stored as plugin options. They can be updated anytime from the HubSpot Sync settings page.
 
 ## REST API Endpoints
 

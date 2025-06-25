@@ -3,7 +3,10 @@
 if (!defined('ABSPATH')) {
     exit; // Exit if accessed directly
 }
-
+        register_setting('hubspot_wc_settings', 'hubspot_connected');
+        register_setting('hubspot_wc_settings', 'hubspot_client_id');
+        register_setting('hubspot_wc_settings', 'hubspot_client_secret');
+        register_setting('hubspot_wc_settings', 'hubspot_pipeline_id');
 class HubSpot_WC_Settings {
 
     public static function init() {
@@ -34,7 +37,18 @@ class HubSpot_WC_Settings {
      */
     public static function register_settings() {
         register_setting('hubspot_wc_settings', 'hubspot_connected');
-        register_setting('hubspot_wc_settings', 'hubspot_pipeline_id');
+        <h3>HubSpot Authentication & Setup</h3>
+        <p>Status: <span id="hubspot-connection-status" style="color: red;">Checking...</span></p>
+        <table class="form-table">
+            <tr>
+                <th><label for="hubspot_client_id">Client ID</label></th>
+                <td><input type="text" id="hubspot_client_id" name="hubspot_client_id" value="<?php echo esc_attr( get_option('hubspot_client_id') ); ?>" class="regular-text" /></td>
+            </tr>
+            <tr>
+                <th><label for="hubspot_client_secret">Client Secret</label></th>
+                <td><input type="text" id="hubspot_client_secret" name="hubspot_client_secret" value="<?php echo esc_attr( get_option('hubspot_client_secret') ); ?>" class="regular-text" /></td>
+            </tr>
+        </table>
         register_setting('hubspot_wc_settings', 'hubspot_auto_create_deal');
         register_setting('hubspot_wc_settings', 'hubspot_pipeline_online');
         register_setting('hubspot_wc_settings', 'hubspot_pipeline_manual');
