@@ -206,8 +206,12 @@ class HubSpot_WC_Settings {
         if (is_wp_error($response)) {
             error_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message());
             return ['error' => 'Failed to fetch pipelines: ' . $response->get_error_message()];
-        }
-
+        }    public static function hubspot_check_connection() {
+        if ( ! current_user_can( 'manage_woocommerce' ) ) {
+            wp_send_json_error( 'Unauthorized', 403 );
+        }
+        global $wpdb;
+        $table_name = $wpdb->prefix . "hubspot_tokens";
         $body = json_decode(wp_remote_retrieve_body($response), true);
         error_log("[HubSpot OAuth] 🔍 Pipelines API Response: " . print_r($body, true));
 

@@ -43,9 +43,17 @@ function render_hubspot_email_templates_page() {
         <h2>Saved Templates</h2>
         <table class="widefat">
             <thead><tr><th>Label</th><th>Subject</th><th>Actions</th></tr></thead>
-            <tbody id="template-list">
-                <?php foreach ($templates as $id => $tpl): ?>
-                    <tr data-id="<?= esc_attr($id) ?>"
+            <tbody id="template-list">add_action('wp_ajax_save_hubspot_email_template', function () {
+    check_ajax_referer('hubspot_email_template_nonce', 'security');
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
+add_action('wp_ajax_delete_hubspot_email_template', function () {
+    check_ajax_referer('hubspot_email_template_nonce', 'security');
+    if ( ! current_user_can( 'manage_woocommerce' ) ) {
+        wp_send_json_error( 'Unauthorized', 403 );
+    }
+
                         data-label="<?= esc_attr($tpl['label']) ?>"
                         data-subject="<?= esc_attr($tpl['subject']) ?>"
                         data-body="<?= esc_attr($tpl['body']) ?>">
