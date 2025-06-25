@@ -54,12 +54,20 @@ if (!file_exists($variables_path)) {
 }
 $hubspot_config = include $variables_path;
 
-/**
- * Manage HubSpot Access Token (Retrieve, Validate, Refresh)
- */
-function manage_hubspot_access_token() {
-    global $wpdb, $table_name, $log_file;
-
+/** * Schedule HubSpot token refresh every 30 minutes.
+    if (!wp_next_scheduled('hubspot_token_refresh_event')) {
+        wp_schedule_event(time(), 'thirty_minutes', 'hubspot_token_refresh_event');
+    }
+}
+add_action('hubspot_token_refresh_event', 'check_and_refresh_hubspot_token');
+
+    $schedules['thirty_minutes'] = [
+        'interval' => 1800, // 1800 seconds = 30 minutes
+        'display'  => 'Every 30 Minutes'
+    ];
+    return $schedules;
+});
+
     $token_data = $wpdb->get_row("SELECT * FROM {$table_name} LIMIT 1", ARRAY_A);
 
     if ($token_data) {
