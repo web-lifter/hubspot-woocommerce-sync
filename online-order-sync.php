@@ -24,7 +24,9 @@ function set_order_type_for_online_orders($order_id, $order) {
     if (is_admin() || strtolower($existing_order_type) === 'manual') {
         return;
     }
-
+ * Entry point for HubSpot sync after order payment completion
+// Trigger deal creation after successful payment
+add_action('woocommerce_payment_complete', 'hubspot_auto_sync_online_order', 10, 1);
     $order->update_meta_data('order_type', 'online');
     $order->save_meta_data();
 }
