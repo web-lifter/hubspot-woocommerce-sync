@@ -1,6 +1,7 @@
-<?php
-/**
- * Plugin Name: HubSpot Order Management
+/**
+ * HubSpot Order Management helpers
+ */
+
  * Description: Adds a custom WooCommerce admin page to view HubSpot-synced orders and manually trigger deal sync.
  * Version: 1.1
  */
