@@ -62,8 +62,13 @@ function set_order_type_for_online_orders($order_id, $order) {
 
     // Only continue if customer ID is set (logged-in customer) or user is guest
     $customer_id = $order->get_customer_id();
-    $is_guest = $order->get_user_id() === 0;
-
+    // Create the deal
+    $deal_id = hubspot_create_deal_from_order($order, $pipeline_id, $deal_stage, $contact_id, $access_token);
+    if (!$deal_id) {
+        $order->add_order_note('❌ HubSpot deal creation failed.');
+        return;
+    }
+
     // If it's either a guest or a customer (i.e. not system generated), set type to 'online'
     if ($is_guest || $customer_id > 0) {
         $order->update_meta_data('order_type', 'online');

@@ -68,13 +68,29 @@ function hubspot_get_or_create_company($name, $access_token) {
                 'operator' => 'EQ',
                 'value' => $name
             ]]
-        ]]
-    ];
-
-    $response = wp_remote_post($url, [
-        'headers' => [
-            'Authorization' => "Bearer $access_token",
-            'Content-Type' => 'application/json'
+        ]]    $response = wp_remote_post("https://api.hubapi.com/crm/v3/objects/deals", [
+        'headers' => [
+            'Authorization' => "Bearer $access_token",
+            'Content-Type' => 'application/json'
+        ],
+        'body' => json_encode($payload)
+    ]);
+
+    if (is_wp_error($response)) {
+        error_log('[HubSpot] Deal creation request failed: ' . $response->get_error_message());
+        return null;
+    }
+
+    $status_code = wp_remote_retrieve_response_code($response);
+    $response_body = wp_remote_retrieve_body($response);
+    $data = json_decode($response_body, true);
+
+    if ($status_code !== 201 || empty($data['id'])) {
+        error_log('[HubSpot] Deal creation failed. Response: ' . $response_body);
+        return null;
+    }
+
+    return $data['id'];
         ],
         'body' => json_encode($payload)
     ]);

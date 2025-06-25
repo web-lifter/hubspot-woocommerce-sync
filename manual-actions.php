@@ -1,5 +1,7 @@
-<?php
-/**
+function hubwoo_send_invoice_email_ajax() {
+add_action('wp_ajax_send_invoice_email', 'hubwoo_send_invoice_email_ajax');
+add_action('wp_ajax_manual_sync_hubspot_order', 'hubwoo_manual_sync_hubspot_order');
+function hubwoo_manual_sync_hubspot_order() {
  * Manual Helper Functions
  *
  * @package Steelmark
@@ -74,8 +76,9 @@ function manual_sync_hubspot_order() {
     // ✅ Get cached labels
     $labels = get_hubspot_pipeline_and_stage_labels();
     $pipeline_id = $deal['pipeline'] ?? '';
-    $dealstage_id = $deal['dealstage'] ?? '';
-    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;
+    $dealstage_id = $deal['dealstage'] ?? '';add_action('wp_ajax_create_hubspot_deal_manual', 'hubwoo_create_hubspot_deal_manual');
+function hubwoo_create_hubspot_deal_manual() {
+
     $dealstage_label = $labels['stages'][$dealstage_id] ?? $dealstage_id;
 
     // 🔄 Clear existing line and shipping items
