@@ -1,4 +1,5 @@
-<?php
+function hubwoo_order_type(WC_Order $order) {
+
 /**
  * Hubspot Util Functions
  *
