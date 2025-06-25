@@ -127,12 +127,21 @@ function handle_quote_acceptance() {
     $current_status = $order->get_meta('quote_status');
     if ($current_status !== 'Quote Accepted') {
         $order->update_meta_data('quote_status', 'Quote Accepted');
-
-        if ($order->get_status() !== 'pending_payment') {
-            $order->update_status('pending_payment', 'Quote accepted by customer');
-        }
-
-        $type = function_exists('order_type') ? order_type($order) : 'manual';
+    $access_token = manage_hubspot_access_token();
+    if (is_wp_error($access_token) || !$access_token) {
+        $error_message = is_wp_error($access_token) ? $access_token->get_error_message() : 'Access token not available';
+        error_log("[ERROR] Could not retrieve HubSpot access token");
+        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
+        return;
+    }
+    $status = wp_remote_retrieve_response_code($response);
+    if ($status !== 200) {
+        $error_body = wp_remote_retrieve_body($response);
+        error_log("[ERROR] HubSpot stage update failed with status {$status} for deal {$deal_id}. Response: {$error_body}");
+        $order->add_order_note('❌ HubSpot sync failed: ' . $error_body);
+        return;
+    }
+
         $quote_accepted_stage_id = $type === 'manual'
             ? get_option('hubspot_stage_quote_accepted_manual')
             : get_option('hubspot_stage_quote_accepted_online');
