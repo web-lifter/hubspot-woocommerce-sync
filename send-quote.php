@@ -53,14 +53,15 @@ function hubwoo_send_invoice($order_id) {
         'Reply-To: website@steelmark.com.au',
         'Return-Path: website@steelmark.com.au',
         'X-Mailer: PHP/' . phpversion(),
-        'X-Priority: 3 (Normal)'
-    ];
-
-    $sent = wp_mail($email, $subject, $message, $headers);
-    $now = current_time('mysql', true);
-
-    $order->update_meta_data('quote_status', 'Quote Sent');
-    $order->update_meta_data('quote_last_sent', $now);
+        $manual = is_order_manual($order);
+        $accepted_stage_option = $manual ? 'hubspot_stage_quote_accepted_manual' : 'hubspot_stage_quote_accepted_online';
+        $accepted_stage_id = get_option($accepted_stage_option);
+
+        if ($accepted_stage_id) {
+            update_hubspot_deal_stage($order_id, $accepted_stage_id);
+        }
+
+        $order->save(); // <-- FIXED
     $order->save(); // <-- FIXED
 
     $manual = is_order_manual($order);
