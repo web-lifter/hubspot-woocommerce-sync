@@ -51,20 +51,20 @@ $hubspot_config = [
     'scopes'        => 'crm.objects.line_items.read crm.objects.line_items.write oauth conversations.read conversations.write crm.objects.contacts.write e-commerce sales-email-read crm.objects.companies.write crm.objects.companies.read crm.objects.deals.read crm.objects.deals.write crm.objects.contacts.read',
 ];
 
-require_once HUBSPOT_WC_SYNC_PATH . 'utils.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'hubspot-auth.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'hubspot-pipelines.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'hubspot-functions.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'hubspot-init.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'hubspot-settings.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'manual-actions.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'manual-order-sync.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'object-associations.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'online-order-sync.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'send-quote.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'create-object.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'fetch-object.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'hub-order-management.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/utils.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-auth.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-pipelines.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-functions.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-init.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-settings.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/manual-actions.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/manual-order-sync.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/object-associations.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/online-order-sync.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/send-quote.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/create-object.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/fetch-object.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/hub-order-management.php';
 
 // Kick off the settings hooks
 HubSpot_WC_Settings::init();

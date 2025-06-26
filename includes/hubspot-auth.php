@@ -139,7 +139,8 @@ function check_and_refresh_hubspot_token() {
     $table_name = $wpdb->prefix . "hubspot_tokens";
 
     $token_data = $wpdb->get_row("SELECT * FROM {$table_name} LIMIT 1", ARRAY_A);
-
+    $hubspot_config = include HUBSPOT_WC_SYNC_PATH . 'includes/variables.php';
+
     if (!$token_data || empty($token_data['access_token']) || empty($token_data['refresh_token'])) {
         error_log("[HubSpot OAuth] ❌ No valid tokens found in database.");
         return false;
