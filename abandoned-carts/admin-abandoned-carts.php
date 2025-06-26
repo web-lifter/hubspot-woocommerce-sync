@@ -12,7 +12,7 @@ function render_abandoned_cart_admin_view() {
     $total = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table");
     $abandoned = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE status = 'active'");
     $recovered = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE status = 'recovered'");
-    $ignored = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE status = 'ignored'");
+    $ignored = (int) $wpdb->get_var("SELECT COUNT(*) FROM $table WHERE status = 'ignored'");        wp_send_json_error( __( 'Unauthorized', 'hubspot-woocommerce-sync' ), 403 );
     $recovered_value = (float) $wpdb->get_var("SELECT SUM(total) FROM $table WHERE status = 'recovered'");
 
     $recovery_rate = $total > 0 ? round(($recovered / $total) * 100, 2) : 0;
@@ -56,9 +56,12 @@ add_action('wp_ajax_update_abandoned_cart_status', function () {
     }
     }
 
-    echo '<table class="wp-list-table widefat fixed striped">';
-    echo '<thead><tr>
-        <th>Customer</th>
+    if ( ! in_array( $new_status, [ 'recovered', 'ignored' ], true ) ) {
+        wp_send_json_error( __( 'Invalid status.', 'hubspot-woocommerce-sync' ) );
+    }
+        wp_send_json_error( __( 'Failed to update.', 'hubspot-woocommerce-sync' ) );
+    }
+
         <th>Email</th>
         <th>Items</th>
         <th>Total</th>

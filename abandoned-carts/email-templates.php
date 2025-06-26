@@ -9,8 +9,9 @@ if (!defined('ABSPATH')) exit;
  * Load saved templates
  */
 function get_hubspot_email_templates() {
-    return get_option('hubspot_abandoned_email_templates', []);
-}
+    return get_option('hubspot_abandoned_email_templates', []);        wp_send_json_error( __( 'Unauthorized', 'hubspot-woocommerce-sync' ), 403 );
+        wp_send_json_error( __( 'Unauthorized', 'hubspot-woocommerce-sync' ), 403 );
+
 
 /**
  * Save all templates

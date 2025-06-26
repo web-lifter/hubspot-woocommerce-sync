@@ -1,15 +1,26 @@
-<?php
-/**
- * Plugin Name: HubSpot Order Management
- * Description: Adds a custom WooCommerce admin page to view HubSpot-synced orders and manually trigger deal sync.
- * Version: 1.1
- */
-
-if (!defined('ABSPATH')) exit;
-
-/**
- * Render HubSpot Order Management Table
- */
+<?php    echo '<input type="search" name="search" placeholder="' . esc_attr__( 'Customer or Deal ID', 'hubspot-woocommerce-sync' ) . '" value="' . esc_attr($search) . '" /> ';
+        '' => __( 'All Statuses', 'hubspot-woocommerce-sync' ),
+        'pending' => __( 'Pending Payment', 'hubspot-woocommerce-sync' ),
+        'processing' => __( 'Processing', 'hubspot-woocommerce-sync' ),
+        'completed' => __( 'Completed', 'hubspot-woocommerce-sync' ),
+        'failed' => __( 'Failed', 'hubspot-woocommerce-sync' ),
+    echo '<button class="button">' . esc_html__( 'Filter', 'hubspot-woocommerce-sync' ) . '</button>';
+        <th><?php echo esc_html__( "Order #", "hub-woo-sync" ); ?></th>    echo '<input type="search" name="search" placeholder="' . esc_attr__( 'Customer or Deal ID', 'hubspot-woocommerce-sync' ) . '" value="' . esc_attr($search) . '" /> ';
+        '' => __( 'All Statuses', 'hubspot-woocommerce-sync' ),
+        'pending' => __( 'Pending Payment', 'hubspot-woocommerce-sync' ),
+        'processing' => __( 'Processing', 'hubspot-woocommerce-sync' ),
+        'completed' => __( 'Completed', 'hubspot-woocommerce-sync' ),
+        'failed' => __( 'Failed', 'hubspot-woocommerce-sync' ),
+    echo '<button class="button">' . esc_html__( 'Filter', 'hubspot-woocommerce-sync' ) . '</button>';
+
+        $quote_status = $order->get_meta('quote_status') ?: __( 'Quote Not Sent', 'hubspot-woocommerce-sync' );
+        $send_quote_label = ($quote_status === __( 'Quote Sent', 'hubspot-woocommerce-sync' ) || $quote_status === __( 'Quote Not Accepted', 'hubspot-woocommerce-sync' )) ? __( 'Resend Quote', 'hubspot-woocommerce-sync' ) : __( 'Send Quote', 'hubspot-woocommerce-sync' );
+        $invoice_status = $order->get_meta('invoice_status') ?: __( 'Not Sent', 'hubspot-woocommerce-sync' );
+        echo '<td><button class="button manual-sync" data-order-id="' . esc_attr($order_id) . '" data-nonce="' . esc_attr($nonces['sync']) . '">' . esc_html__( 'Sync', 'hubspot-woocommerce-sync' ) . '</button></td>';
+                <button class="button reset-quote" data-order-id="' . esc_attr($order_id) . '" data-nonce="' . esc_attr($nonces['reset']) . '">' . esc_html__( 'Reset Quote', 'hubspot-woocommerce-sync' ) . '</button>
+                <button class="button send-invoice" data-order-id="' . esc_attr($order_id) . '" data-nonce="' . esc_attr($nonces['invoice']) . '">' . esc_html__( 'Send Invoice', 'hubspot-woocommerce-sync' ) . '</button>';
+                    echo '<button class="button create-deal" data-order-id="' . esc_attr($order_id) . '" data-nonce="' . esc_attr($nonces['create_deal']) . '">' . esc_html__( 'Create Deal', 'hubspot-woocommerce-sync' ) . '</button>';
+
 function render_hubspot_orders_page_table_only() {
     $nonces = [
         'quote'     => wp_create_nonce('send_quote_email_nonce'),
@@ -58,10 +69,13 @@ function render_hubspot_orders_page_table_only() {
     }
 
     if ($search) {
-        $query_args['meta_query'] = [
-            'relation' => 'OR',
-            [
-                'key'     => 'hubspot_deal_id',
+        $query_args['meta_query'] = [            postAction("send_quote_email", btn.data("order-id"), btn.data("nonce"), btn, "<?php echo esc_js( __( 'Quote sent!', 'hubspot-woocommerce-sync' ) ); ?>", "<?php echo esc_js( __( 'Send failed', 'hubspot-woocommerce-sync' ) ); ?>");
+            if (!confirm("<?php echo esc_js( __( 'Reset quote status for this order?', 'hubspot-woocommerce-sync' ) ); ?>")) return;
+            postAction("reset_quote_status", btn.data("order-id"), btn.data("nonce"), btn, "<?php echo esc_js( __( 'Quote status reset.', 'hubspot-woocommerce-sync' ) ); ?>", "<?php echo esc_js( __( 'Reset failed', 'hubspot-woocommerce-sync' ) ); ?>");
+            postAction("send_invoice_email", btn.data("order-id"), btn.data("nonce"), btn, "<?php echo esc_js( __( 'Invoice sent!', 'hubspot-woocommerce-sync' ) ); ?>", "<?php echo esc_js( __( 'Invoice failed', 'hubspot-woocommerce-sync' ) ); ?>");
+            postAction("manual_sync_hubspot_order", btn.data("order-id"), btn.data("nonce"), btn, "<?php echo esc_js( __( 'Order synced!', 'hubspot-woocommerce-sync' ) ); ?>", "<?php echo esc_js( __( 'Sync failed', 'hubspot-woocommerce-sync' ) ); ?>");
+                "<?php echo esc_js( __( 'Deal created successfully!', 'hubspot-woocommerce-sync' ) ); ?>",
+                "<?php echo esc_js( __( 'Deal creation failed', 'hubspot-woocommerce-sync' ) ); ?>"
                 'value'   => $search,
                 'compare' => 'LIKE',
             ],
