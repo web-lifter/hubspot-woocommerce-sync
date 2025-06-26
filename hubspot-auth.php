@@ -87,16 +87,6 @@ if (!file_exists($variables_path)) {
     hubwoo_log("[HubSpot OAuth] ✅ Access token is still valid.", 'error');
         hubwoo_log("[HubSpot OAuth] ❌ Missing HubSpot Client ID or Secret in configuration.", 'error');
     hubwoo_log("[HubSpot OAuth] 🔄 Refreshing access token for portal: " . $portal_id, 'error');
-        hubwoo_log("[HubSpot OAuth] ❌ Error refreshing token: " . $response->get_error_message(), 'error');
-        hubwoo_log("[HubSpot OAuth] ❌ Failed to retrieve new access token. API Response: " . print_r($body, true), 'error');
-        hubwoo_log("[HubSpot OAuth] ❌ Failed to update new token in database.", 'error');
-    hubwoo_log("[HubSpot OAuth] ✅ Token successfully refreshed. New expiration time: " . date("Y-m-d H:i:s", $expires_at), 'error');
-    hubwoo_log("[HubSpot OAuth] Debugging HubSpot Config: " . print_r($hubspot_config, true), 'error');
-    hubwoo_log("[HubSpot OAuth] Redirecting to: " . $auth_url, 'error');
-    }
-}
-add_action('hubspot_token_refresh_event', 'check_and_refresh_hubspot_token');
-
     $schedules['thirty_minutes'] = [
         'interval' => 1800, // 1800 seconds = 30 minutes
         'display'  => 'Every 30 Minutes'

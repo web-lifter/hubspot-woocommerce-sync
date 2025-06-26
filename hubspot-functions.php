@@ -1,21 +1,13 @@
-function hubwoo_render_combined_order_management_page() {
-add_action('wp_ajax_import_hubspot_order', 'hubwoo_import_hubspot_order_ajax');
-function hubwoo_import_hubspot_order_ajax() {
+/* Removed duplicate function declarations and hooks */
+        <h2>Import Order from HubSpot</h2>
+        <form id="hubspot-import-form">
+            <input type="hidden" name="action" value="import_hubspot_order" />
+            <input type="text" name="hubspot_deal_id" placeholder="HubSpot Deal ID" required />
+            <input type="submit" class="button button-primary" value="Import Order">
+        </form>
+        <hr>
+    <?php
 
-add_action('wp_ajax_import_hubspot_order', 'hubwoo_import_hubspot_order_ajax');
-function hubwoo_import_hubspot_order_ajax() {
-    exit;
-}
-
-/*
-*
-* Render Order Management Page
-*
-*/
-
-function render_combined_order_management_page() {
-    // === Import Form ===
-    ?>
     <div class="wrap">
         <h1>HubSpot Order Management</h1>
         <h2>Import Order from HubSpot</h2>

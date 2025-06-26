@@ -9,7 +9,7 @@
     if ( ! current_user_can( 'manage_woocommerce' ) ) {
         wp_send_json_error( 'Unauthorized', 403 );
     }
-function hubwoo_manual_sync_hubspot_order() {
+
     check_ajax_referer('manual_sync_hubspot_order_nonce', 'security');
     if ( ! current_user_can( 'manage_woocommerce' ) ) {
         wp_send_json_error( 'Unauthorized', 403 );
@@ -17,8 +17,6 @@ function hubwoo_manual_sync_hubspot_order() {
     if ( ! current_user_can( 'manage_woocommerce' ) ) {
         wp_send_json_error( 'Unauthorized', 403 );
     }
-
-    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;    $type = hubwoosync_order_type($order);
 
     $type = hubwoosync_order_type($order);
 
@@ -56,8 +54,7 @@ function hubwoo_create_hubspot_deal_manual() {
     }
 
     $email = $order->get_billing_email();
-    if (!$email) {
-        wp_send_json_error('Customer email not found.');
+
     }
 
     // Trigger WooCommerce invoice email
