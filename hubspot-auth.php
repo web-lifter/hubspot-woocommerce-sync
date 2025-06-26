@@ -89,16 +89,21 @@ if (!file_exists($variables_path)) {
     hubwoo_log("[HubSpot OAuth] 🔄 Refreshing access token for portal: " . $portal_id, 'error');
     $schedules['thirty_minutes'] = [
         'interval' => 1800, // 1800 seconds = 30 minutes
-        'display'  => 'Every 30 Minutes'
-    ];
-    return $schedules;
-});
+    hubwoo_log("[HubSpot OAuth] ❌ No stored token found.", 3, $log_file);
+        hubwoo_log("[HubSpot OAuth] ❌ No valid tokens found in database.");
+        hubwoo_log("[HubSpot OAuth] 🔄 Token is expired or about to expire. Refreshing...");
+            hubwoo_log("[HubSpot OAuth] ✅ Token successfully refreshed.");
+            hubwoo_log("[HubSpot OAuth] ❌ Failed to refresh access token.");
+    hubwoo_log("[HubSpot OAuth] ✅ Access token is still valid.");
 
-    $token_data = $wpdb->get_row("SELECT * FROM {$table_name} LIMIT 1", ARRAY_A);
-
-    if ($token_data) {
-        $portal_id = $token_data['portal_id'] ?? null;
-        $access_token = $token_data['access_token'];
+        hubwoo_log("[HubSpot OAuth] ❌ Missing HubSpot Client ID or Secret in configuration.");
+    hubwoo_log("[HubSpot OAuth] 🔄 Refreshing access token for portal: " . $portal_id);
+        hubwoo_log("[HubSpot OAuth] ❌ Error refreshing token: " . $response->get_error_message());
+        hubwoo_log("[HubSpot OAuth] ❌ Failed to retrieve new access token. API Response: " . print_r($body, true));
+        hubwoo_log("[HubSpot OAuth] ❌ Failed to update new token in database.");
+    hubwoo_log("[HubSpot OAuth] ✅ Token successfully refreshed. New expiration time: " . date("Y-m-d H:i:s", $expires_at));
+    hubwoo_log("[HubSpot OAuth] Debugging HubSpot Config: " . print_r($hubspot_config, true));
+    hubwoo_log("[HubSpot OAuth] Redirecting to: " . $auth_url);
         $expires_at = $token_data['expires_at'];
 /**
  * Schedule HubSpot token refresh every 30 minutes.

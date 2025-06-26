@@ -32,8 +32,10 @@ function import_hubspot_order_ajax() {
 
     ?>
     </div>
-
-    <script>
+    hubwoo_log("[IMPORT] Syncing deal ID $deal_id");
+                hubwoo_log("[IMPORT] ⚠️ No stages found for pipeline ID {$pipeline_id}.");
+            hubwoo_log("[IMPORT] ❌ Failed to fetch pipeline stages: " . $pipeline_response->get_error_message());
+
     jQuery(document).ready(function($) {
         $('#hubspot-import-form').on('submit', function(e) {
             e.preventDefault();
@@ -119,8 +121,9 @@ function import_hubspot_order_ajax() {
         hubwoo_log("[IMPORT] ⚠️ No stage mapping found for order status '{$status_key}'", 'error');
         'return' => 'ids'
     ]);
-
-    if ($existing) {
+            hubwoo_log("[IMPORT] ❌ Failed to update deal stage/order ID for deal #{$deal_id}. Response: " . print_r($update_body, true));
+            hubwoo_log("[IMPORT] ✅ Deal #{$deal_id} updated to stage '{$new_stage}' and order ID '{$order_number}'.");
+        hubwoo_log("[IMPORT] ⚠️ No stage mapping found for order status '{$status_key}'");
         $order = wc_get_order($existing[0]);
         $is_update = true;
         foreach ($order->get_items() as $id => $item) $order->remove_item($id);

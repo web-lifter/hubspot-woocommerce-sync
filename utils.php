@@ -8,12 +8,10 @@ function hubwoosync_order_type( WC_Order $order ) {
 }
 
 function hubwoo_log( $message, $level = 'info' ) {
-    if ( 'error' === $level ) {
-        error_log( $message );
-        return;
-    }
+    $debug_enabled = ( defined( 'HUBSPOT_WC_DEBUG' ) && HUBSPOT_WC_DEBUG ) ||
+        ( defined( 'WP_DEBUG' ) && WP_DEBUG );
 
-    if ( ( defined( 'HUBSPOT_WC_DEBUG' ) && HUBSPOT_WC_DEBUG ) || ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) {
+    if ( $debug_enabled ) {
         error_log( $message );
     }
 }

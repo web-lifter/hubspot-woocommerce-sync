@@ -132,11 +132,16 @@
 
     }            hubwoo_log("[HubSpot OAuth] ❌ No valid access token available.", 'error');
         hubwoo_log("[HubSpot OAuth] 🔍 Fetching pipelines with token: " . substr($access_token, 0, 10) . "...", 'error');
-        hubwoo_log("[HubSpot OAuth] 🔍 Pipelines API HTTP Status Code: " . $http_code, 'error');
-            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message(), 'error');
-        hubwoo_log("[HubSpot OAuth] ✅ Pipelines fetched successfully: " . print_r($pipelines, true), 'error');
-            hubwoo_log("[HubSpot OAuth] ❌ No valid access token available.", 'error');
-            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message(), 'error');
+            hubwoo_log("[HubSpot OAuth] ❌ No valid access token available.");
+        hubwoo_log("[HubSpot OAuth] 🔍 Fetching pipelines with token: " . substr($access_token, 0, 10) . "...");
+        hubwoo_log("[HubSpot OAuth] 🔍 Pipelines API HTTP Status Code: " . $http_code);
+            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message());
+        hubwoo_log("[HubSpot OAuth] ✅ Pipelines fetched successfully: " . print_r($pipelines, true));
+
+            hubwoo_log("[HubSpot OAuth] ❌ No valid access token available.");
+            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message());
+            hubwoo_log("[HubSpot OAuth] ❌ Invalid API response: 'stages' field missing.");
+
             hubwoo_log("[HubSpot OAuth] ❌ Invalid API response: 'stages' field missing.", 'error');
 
     private static function render_authentication_settings() {
@@ -278,10 +283,14 @@
 
     private static function get_pipeline_stages($pipeline_id) {
         global $wpdb;
-        hubwoo_log("[HubSpot OAuth] 🔍 Checking connection...", 'error');
-            hubwoo_log("[HubSpot OAuth] ❌ No token found in database.", 'error');
-        hubwoo_log("[HubSpot OAuth] ✅ Token found: " . substr($access_token, 0, 10) . "...", 'error');
-        hubwoo_log("[HubSpot OAuth] 🔍 HTTP Status Code: " . $http_code, 'error');
+        hubwoo_log("[HubSpot OAuth] 🔍 Checking connection...");
+            hubwoo_log("[HubSpot OAuth] ❌ No token found in database.");
+        hubwoo_log("[HubSpot OAuth] ✅ Token found: " . substr($access_token, 0, 10) . "...");
+        hubwoo_log("[HubSpot OAuth] 🔍 HTTP Status Code: " . $http_code);
+            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message());
+        hubwoo_log("[HubSpot OAuth] 🔍 HubSpot API Response: " . print_r($body, true));
+        hubwoo_log("[HubSpot OAuth] ✅ Account Information Retrieved: " . print_r($account_info, true));
+
             hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message(), 'error');
         hubwoo_log("[HubSpot OAuth] 🔍 HubSpot API Response: " . print_r($body, true), 'error');
         hubwoo_log("[HubSpot OAuth] ✅ Account Information Retrieved: " . print_r($account_info, true), 'error');
