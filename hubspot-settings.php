@@ -86,21 +86,36 @@ class HubSpot_WC_Settings {
                     self::render_authentication_settings();
                 } elseif ($active_tab === 'woocommerce') {
                     self::render_woocommerce_settings();
-                }
-
-                submit_button();
-                ?>
-            </form>
-        </div>
-        <?php
-    }
-
-    /**
-     * Get active tab class
-     */
-    private static function get_active_tab($tab) {
-        $active_tab = isset($_GET['tab']) ? sanitize_text_field($_GET['tab']) : 'authentication';
-        return ($active_tab === $tab) ? 'nav-tab-active' : '';
+        if (!$token_data || empty($token_data['access_token'])) {
+            hubwoo_log("[HubSpot OAuth] ❌ No valid access token available.", 'error');
+            return ['error' => 'HubSpot not authenticated'];
+        }
+        hubwoo_log("[HubSpot OAuth] 🔍 Fetching pipelines with token: " . substr($access_token, 0, 10) . "...");
+        $http_code = wp_remote_retrieve_response_code($response);
+        hubwoo_log("[HubSpot OAuth] 🔍 Pipelines API HTTP Status Code: " . $http_code);
+        if (is_wp_error($response)) {
+            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message(), 'error');
+            return ['error' => 'Failed to fetch pipelines: ' . $response->get_error_message()];
+        $body = json_decode(wp_remote_retrieve_body($response), true);
+        hubwoo_log("[HubSpot OAuth] 🔍 Pipelines API Response: " . print_r($body, true));
+        if (!isset($body['results']) || !is_array($body['results'])) {
+            hubwoo_log("[HubSpot OAuth] ❌ Invalid API response: 'results' field missing.", 'error');
+            return ['error' => 'Invalid API response'];
+        }
+        hubwoo_log("[HubSpot OAuth] ✅ Pipelines fetched successfully: " . print_r($pipelines, true));
+        if (!$token_data || empty($token_data['access_token'])) {
+            hubwoo_log("[HubSpot OAuth] ❌ No valid access token available.", 'error');
+            return [];
+        }
+        if (is_wp_error($response)) {
+            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message(), 'error');
+            return [];
+        }
+        if (!isset($body['stages']) || !is_array($body['stages'])) {
+            hubwoo_log("[HubSpot OAuth] ❌ Invalid API response: 'stages' field missing.", 'error');
+            return [];
+        }
+
     }
 
     /**
@@ -213,17 +228,28 @@ class HubSpot_WC_Settings {
         global $wpdb;
         $table_name = $wpdb->prefix . "hubspot_tokens";
         $body = json_decode(wp_remote_retrieve_body($response), true);
-        error_log("[HubSpot OAuth] 🔍 Pipelines API Response: " . print_r($body, true));
+        hubwoo_log("[HubSpot OAuth] 🔍 Checking connection...");
+        if (!$token_data || empty($token_data['access_token'])) {
+            hubwoo_log("[HubSpot OAuth] ❌ No token found in database.", 'error');
+            echo json_encode(['connected' => 'no', 'portal_id' => '', 'account_info' => 'No data available']);
+            wp_die();
+        }
+        hubwoo_log("[HubSpot OAuth] ✅ Token found: " . substr($access_token, 0, 10) . "...");
+        $http_code = wp_remote_retrieve_response_code($response);
+        hubwoo_log("[HubSpot OAuth] 🔍 HTTP Status Code: " . $http_code);
 
-        if (!isset($body['results']) || !is_array($body['results'])) {
-            error_log("[HubSpot OAuth] ❌ Invalid API response: 'results' field missing.");
-            return ['error' => 'Invalid API response'];
-        }
-
-        $pipelines = [];
-        foreach ($body['results'] as $pipeline) {
-            if (!isset($pipeline['id'], $pipeline['label'])) continue;
-            $pipelines[$pipeline['id']] = $pipeline['label'];
+        if (is_wp_error($response)) {
+            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message(), 'error');
+            echo json_encode([
+                'connected' => 'yes',
+                'portal_id' => $portal_id,
+                'account_info' => 'API request failed'
+            ]);
+            wp_die();
+        }
+        // Log full API response for debugging
+        hubwoo_log("[HubSpot OAuth] 🔍 HubSpot API Response: " . print_r($body, true));
+        hubwoo_log("[HubSpot OAuth] ✅ Account Information Retrieved: " . print_r($account_info, true));
         }
 
         error_log("[HubSpot OAuth] ✅ Pipelines fetched successfully: " . print_r($pipelines, true));
