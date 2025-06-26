@@ -1,0 +1,94 @@
+name: Release Latest
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_title:
+        description: 'Release title (e.g., Production Build)'
+        required: true
+        default: 'Latest Release'
+
+permissions:
+  contents: write  # Required for release creation and asset uploads
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Required to access all tags and commits
+
+      - name: Set Up Git User
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+      - name: Get Previous Latest Tag SHA
+        id: prev_tag
+        run: |
+          PREV_TAG=$(git rev-list -n 1 latest 2>/dev/null || echo "")
+          echo "prev_sha=$PREV_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Delete Existing Latest Tag (if any)
+        run: |
+          git tag -d latest || true
+          git push --delete origin latest || true
+
+      - name: Create New Latest Tag
+        run: |
+          git tag latest
+          git push origin latest
+
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          if [ -z "${{ steps.prev_tag.outputs.prev_sha }}" ]; then
+            echo "changelog=Initial release with no previous tag." >> "$GITHUB_OUTPUT"
+          else
+            LOG=$(git log --pretty=format:"- %s (%an)" ${{ steps.prev_tag.outputs.prev_sha }}..HEAD)
+            echo "changelog<<EOF" >> "$GITHUB_OUTPUT"
+            echo "$LOG" >> "$GITHUB_OUTPUT"
+            echo "EOF" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Delete Previous Release (if any)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASE_ID=$(gh release list --limit 100 | grep 'latest' | awk '{print $1}')
+          if [ -n "$RELEASE_ID" ]; then
+            gh release delete latest --yes
+          fi
+
+      - name: Create New Release for latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create latest \
+            --title "${{ github.event.inputs.release_title }}" \
+            --notes "${{ steps.changelog.outputs.changelog }}"
+
+      - name: Upload LICENSE.txt and .jar Files
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          FILES=""
+          [ -f LICENSE.txt ] && FILES="$FILES LICENSE.txt"
+          for jar in $(find . -name '*.jar'); do FILES="$FILES $jar"; done
+          if [ -n "$FILES" ]; then
+            gh release upload latest $FILES --clobber
+          fi
+
+      - name: Package Plugin
+        id: zip
+        run: |
+          bash bin/package.sh
+
+      - name: Upload Archive to Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload latest "${{ steps.zip.outputs.zip_file }}" --clobber
