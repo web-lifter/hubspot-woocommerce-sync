@@ -47,7 +47,25 @@ add_action('woocommerce_order_status_completed', 'update_hubspot_with_payway_ord
         error_log("[HUBSPOT] ❌ Access token not available");
         return;
     }
-
+add_action('woocommerce_new_order', 'set_manual_order_type_for_admin', 5, 2);
+
+function set_manual_order_type_for_admin($order_id, $order) {
+    if (!is_admin() || (defined('REST_REQUEST') && REST_REQUEST) || php_sapi_name() === 'cli') {
+        return;
+    }
+
+    if (!is_a($order, 'WC_Order')) {
+        $order = wc_get_order($order_id);
+    }
+
+    $existing = $order->get_meta('order_type');
+    if (strtolower($existing) !== 'manual') {
+        $order->update_meta_data('order_type', 'manual');
+        $order->save_meta_data();
+        error_log("[Order Type] Order #$order_id created in admin — marked as manual.");
+    }
+}
+
     // Send update to HubSpot
     $update_url = "https://api.hubapi.com/crm/v3/objects/deals/{$deal_id}";
     $payload = [
