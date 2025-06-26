@@ -1,7 +1,9 @@
 function hubwoo_order_type(WC_Order $order) {
 
-/**
- * Hubspot Util Functions
+function hubwoosync_order_type(WC_Order $order) {
+    return $order->get_meta('order_type') ?: 'online';
+}
+
  *
  * @package Steelmark
  */

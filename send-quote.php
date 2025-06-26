@@ -53,11 +53,11 @@ function hubwoo_handle_quote_acceptance() {
         $order->save(); // <-- FIXED
 add_action('init', 'hubwoo_handle_quote_acceptance');
 
-function hubwoo_handle_quote_acceptance() {
-        $type = function_exists('hubwoo_order_type') ? hubwoo_order_type($order) : 'manual';
-        hubwoo_send_invoice($order_id);
-            hubwoo_send_invoice($order);
-function hubwoo_send_invoice($order_id) {
+add_action('init', 'hubwoosync_handle_quote_acceptance');
+function hubwoosync_handle_quote_acceptance() {
+        hubwoosync_send_invoice($order_id);
+            hubwoosync_send_invoice($order);
+function hubwoosync_send_invoice($order_id) {
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset=UTF-8',
         'From: Steelmark <website@steelmark.com.au>',
