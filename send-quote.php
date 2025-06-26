@@ -1,11 +1,14 @@
     check_ajax_referer('send_quote_email_nonce', 'security');
     if ( ! current_user_can( 'manage_woocommerce' ) ) {
-        wp_send_json_error( 'Unauthorized', 403 );
+        wp_send_json_error( __( 'Unauthorized', 'hub-woo-sync' ), 403 );
     }
 
-
-if ( ! defined( 'ABSPATH' ) ) {
-    exit;
+        wp_send_json_error( __( 'Unauthorized', 'hub-woo-sync' ), 403 );
+    if (!$order) wp_send_json_error( __( 'Invalid Order ID.', 'hub-woo-sync' ) );
+    if (!$email) wp_send_json_error( __( 'No customer email found.', 'hub-woo-sync' ) );
+    wp_send_json_success( __( 'Quote sent successfully.', 'hub-woo-sync' ) );
+    if (!$order) wp_send_json_error( __( 'Invalid Order ID.', 'hub-woo-sync' ) );
+    wp_send_json_success( __( 'Quote status reset.', 'hub-woo-sync' ) );
 }
 
 function get_order_quote_status_info($order) {    $accept_url = site_url('/?accept_quote=yes&order_id=' . $order_id);add_action('init', 'hubwoo_handle_quote_acceptance_placeholder');

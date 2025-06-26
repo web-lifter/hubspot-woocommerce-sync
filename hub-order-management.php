@@ -21,18 +21,30 @@ function render_hubspot_orders_page_table_only() {
     ];
 
     $paged  = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
-    $limit  = 200;
-    $offset = ($paged - 1) * $limit;
-
-    $search = isset($_GET['search']) ? sanitize_text_field($_GET['search']) : '';
-    $status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
-
-    $query_args = [
-        'limit'   => $limit,
-        'offset'  => $offset,
-        'orderby' => 'date',
-        'order'   => 'DESC',
-    ];
+    echo '<div class="wrap"><h1>' . esc_html__( 'HubSpot Orders', 'hub-woo-sync' ) . '</h1>';
+    echo '<input type="search" name="search" placeholder="' . esc_attr__( 'Customer or Deal ID', 'hub-woo-sync' ) . '" value="' . esc_attr($search) . '" /> ';
+    $status_options = [
+        ''          => __( 'All Statuses', 'hub-woo-sync' ),
+        'pending'   => __( 'Pending Payment', 'hub-woo-sync' ),
+        'processing' => __( 'Processing', 'hub-woo-sync' ),
+        'completed' => __( 'Completed', 'hub-woo-sync' ),
+        'failed'    => __( 'Failed', 'hub-woo-sync' ),
+    ];
+    echo '<button class="button">' . esc_html__( 'Filter', 'hub-woo-sync' ) . '</button>';
+    echo '<table class="wp-list-table widefat fixed striped">';
+    echo '<thead><tr>
+        <th>' . esc_html__( 'Order #', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Customer', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Deal ID', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Order Type', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Total', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Status', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Deal Stage', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Quote Status', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Invoice Status', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Sync', 'hub-woo-sync' ) . '</th>
+        <th>' . esc_html__( 'Actions', 'hub-woo-sync' ) . '</th>
+    </tr></thead><tbody>';
 
     if ($status) {
         $query_args['status'] = $status;
@@ -82,36 +94,67 @@ function render_hubspot_orders_page_table_only() {
         'processing' => 'Processing',
         'completed' => 'Completed',
         'failed' => 'Failed',
-    ];
-    foreach ($status_options as $key => $label) {
-        $selected = selected($status, $key, false);
-        echo '<option value="' . esc_attr($key) . '"' . $selected . '>' . esc_html($label) . '</option>';
-    }
-    echo '</select> ';
-    echo '<button class="button">Filter</button>';
-    echo '</form>';
-
-    echo '<table class="wp-list-table widefat fixed striped">';
-    echo '<thead><tr>
-        <th>Order #</th>
-        <th>Customer</th>
-        <th>Deal ID</th>
-        <th>Order Type</th>
-        <th>Total</th>
-        <th>Status</th>
-        <th>Deal Stage</th>
-        <th>Quote Status</th>
-        <th>Invoice Status</th>
-        <th>Sync</th>
-        <th>Actions</th>
-    </tr></thead><tbody>';
-
-    foreach ($orders as $order) {
-        $order_id = $order->get_id();
-        $deal_id  = $order->get_meta('hubspot_deal_id') ?: '—';
-        $labels = get_hubspot_pipeline_and_stage_labels();
-
-        $pipeline_id    = $order->get_meta('hubspot_pipeline_id') ?: '—';
+    // Inline JS
+    echo '<script type="text/javascript">';
+    ?>
+    jQuery(function($){
+        function postAction(action, orderId, nonce, button, successMsg, errorMsg) {
+            button.text(<?php echo json_encode( __( 'Processing...', 'hub-woo-sync' ) ); ?>);
+            $.post(ajaxurl, {
+                action: action,
+                order_id: orderId,
+                security: nonce
+            }, function(response) {
+                if (response.success) {
+                    alert(successMsg);
+                    location.reload();
+                } else {
+                    alert(errorMsg + ": " + response.data);
+                    button.text(button.data("original-label"));
+                }
+            });
+        }
+
+        $(".send-quote, .reset-quote, .send-invoice, .manual-sync").each(function() {
+            const btn = $(this);
+            btn.data("original-label", btn.text());
+        });
+
+        $(".send-quote").click(function() {
+            const btn = $(this);
+            postAction("send_quote_email", btn.data("order-id"), btn.data("nonce"), btn, <?php echo json_encode( __( 'Quote sent!', 'hub-woo-sync' ) ); ?>, <?php echo json_encode( __( 'Send failed', 'hub-woo-sync' ) ); ?>);
+        });
+
+        $(".reset-quote").click(function() {
+            const btn = $(this);
+            if (!confirm(<?php echo json_encode( __( 'Reset quote status for this order?', 'hub-woo-sync' ) ); ?>)) return;
+            postAction("reset_quote_status", btn.data("order-id"), btn.data("nonce"), btn, <?php echo json_encode( __( 'Quote status reset.', 'hub-woo-sync' ) ); ?>, <?php echo json_encode( __( 'Reset failed', 'hub-woo-sync' ) ); ?>);
+        });
+
+        $(".send-invoice").click(function() {
+            const btn = $(this);
+            postAction("send_invoice_email", btn.data("order-id"), btn.data("nonce"), btn, <?php echo json_encode( __( 'Invoice sent!', 'hub-woo-sync' ) ); ?>, <?php echo json_encode( __( 'Invoice failed', 'hub-woo-sync' ) ); ?>);
+        });
+
+        $(".manual-sync").click(function() {
+            const btn = $(this);
+            postAction("manual_sync_hubspot_order", btn.data("order-id"), btn.data("nonce"), btn, <?php echo json_encode( __( 'Order synced!', 'hub-woo-sync' ) ); ?>, <?php echo json_encode( __( 'Sync failed', 'hub-woo-sync' ) ); ?>);
+        });
+
+        $(".create-deal").click(function () {
+            const btn = $(this);
+            postAction(
+                "create_hubspot_deal_manual",
+                btn.data("order-id"),
+                btn.data("nonce"),
+                btn,
+                <?php echo json_encode( __( 'Deal created successfully!', 'hub-woo-sync' ) ); ?>,
+                <?php echo json_encode( __( 'Deal creation failed', 'hub-woo-sync' ) ); ?>
+            );
+        });
+
+    });
+    </script>';
         $pipeline_label = $order->get_meta('hubspot_pipeline');
         if (!$pipeline_label) {
             $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;

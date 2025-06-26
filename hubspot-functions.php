@@ -4,10 +4,14 @@ function hubwoo_import_hubspot_order_ajax() {
 
 add_action('wp_ajax_import_hubspot_order', 'hubwoo_import_hubspot_order_ajax');
 function hubwoo_import_hubspot_order_ajax() {
-    exit;
-}
-
-/*
+        <h1><?php esc_html_e( 'HubSpot Order Management', 'hub-woo-sync' ); ?></h1>
+        <h2><?php esc_html_e( 'Import Order from HubSpot', 'hub-woo-sync' ); ?></h2>
+        wp_send_json_error( __( 'Unauthorized', 'hub-woo-sync' ), 403 );
+
+            <input type="submit" class="button button-primary" value="<?php esc_attr_e( 'Import Order', 'hub-woo-sync' ); ?>">
+    if (!$deal_id) wp_send_json_error( __( 'Missing HubSpot Deal ID.', 'hub-woo-sync' ) );
+    if (!$deal) wp_send_json_error( __( 'Failed to fetch deal data.', 'hub-woo-sync' ) );
+
 *
 * Render Order Management Page
 *

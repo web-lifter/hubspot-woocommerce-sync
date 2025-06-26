@@ -1,20 +1,33 @@
-<?php
-
-if (!defined('ABSPATH')) {
-    exit; // Exit if accessed directly
-}
-        register_setting('hubspot_wc_settings', 'hubspot_connected');
-        register_setting('hubspot_wc_settings', 'hubspot_client_id');
-        register_setting('hubspot_wc_settings', 'hubspot_client_secret');
-        register_setting('hubspot_wc_settings', 'hubspot_pipeline_id');
-class HubSpot_WC_Settings {
-
-    public static function init() {
-        add_action('admin_menu', [__CLASS__, 'register_menu']);
-        add_action('admin_init', [__CLASS__, 'register_settings']);
-        add_action('wp_ajax_hubspot_check_connection', [__CLASS__, 'hubspot_check_connection']);
-        add_action('admin_init', [__CLASS__, 'maybe_refresh_cache_on_save']);
-        add_action('admin_post_hubspot_refresh_pipelines', [__CLASS__, 'handle_refresh_pipelines']);
+        add_menu_page(
+            __( 'HubSpot Settings', 'hub-woo-sync' ),
+            __( 'HubSpot', 'hub-woo-sync' ),
+            'manage_options',
+            'hubspot-woocommerce-sync',
+            [__CLASS__, 'render_settings_page'],
+            'dashicons-admin-generic',
+            56
+        <div class="wrap">
+            <h1><?php esc_html_e( 'HubSpot WooCommerce Sync', 'hub-woo-sync' ); ?></h1>
+            <h2 class="nav-tab-wrapper">
+                <a href="?page=hubspot-woocommerce-sync&tab=authentication" class="nav-tab <?php echo self::get_active_tab('authentication'); ?>"><?php esc_html_e( 'HubSpot Setup', 'hub-woo-sync' ); ?></a>
+                <a href="?page=hubspot-woocommerce-sync&tab=woocommerce" class="nav-tab <?php echo self::get_active_tab('woocommerce'); ?>"><?php esc_html_e( 'Pipelines', 'hub-woo-sync' ); ?></a>
+            </h2>
+        <h3><?php esc_html_e( 'HubSpot Authentication & Setup', 'hub-woo-sync' ); ?></h3>
+        <p><?php esc_html_e( 'Status', 'hub-woo-sync' ); ?>: <span id="hubspot-connection-status" style="color: red;"><?php esc_html_e( 'Checking...', 'hub-woo-sync' ); ?></span></p>
+        <div id="hubspot-account-info">
+            <p><strong><?php esc_html_e( 'HubSpot Account Details:', 'hub-woo-sync' ); ?></strong></p>
+            <ul>
+                <li><strong><?php esc_html_e( 'Portal ID:', 'hub-woo-sync' ); ?></strong> <span id="portal-id"><?php esc_html_e( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php esc_html_e( 'Account Type:', 'hub-woo-sync' ); ?></strong> <span id="account-type"><?php esc_html_e( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php esc_html_e( 'Time Zone:', 'hub-woo-sync' ); ?></strong> <span id="time-zone"><?php esc_html_e( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php esc_html_e( 'Company Currency:', 'hub-woo-sync' ); ?></strong> <span id="company-currency"><?php esc_html_e( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php esc_html_e( 'Data Hosting Location:', 'hub-woo-sync' ); ?></strong> <span id="data-hosting"><?php esc_html_e( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php esc_html_e( 'Access Token:', 'hub-woo-sync' ); ?></strong> <span id="access-token"><?php esc_html_e( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+            </ul>
+        </div>
+        <a href="<?php echo esc_url($auth_url); ?>" class="button-primary" id="hubspot-auth-button">
+            <?php esc_html_e( 'Connect HubSpot', 'hub-woo-sync' ); ?>
+        </a>
     }
 
     /**
@@ -153,15 +166,23 @@ class HubSpot_WC_Settings {
                             $('#access-token').text(accountInfo["Access Token (truncated)"]);
                         } else {
                             $('#hubspot-connection-status').html('<span style="color: red;">Not Connected</span>');
-                            $('#hubspot-account-info ul').html('<li>No account linked</li>');
-                        }
-                    } catch (error) {
-                        console.error("❌ Error parsing response: ", response);
-                        $('#hubspot-connection-status').html('<span style="color: red;">Error Checking Connection</span>');
-                    }
-                }).fail(function(jqXHR, textStatus, errorThrown) {
-                    console.error("❌ AJAX Request Failed:", textStatus, errorThrown);
-                    $('#hubspot-connection-status').html('<span style="color: red;">AJAX Error</span>');
+                            $('#hubspot-account-info ul').html('<li>No account linked</li>');        <h3><?php esc_html_e( 'Hubspot Pipelines', 'hub-woo-sync' ); ?></h3>
+                <th><label for="hubspot_pipeline_sync_enabled"><?php esc_html_e( 'Enable Pipeline Sync', 'hub-woo-sync' ); ?></label></th>
+                    <span><?php esc_html_e( 'Enable automatic syncing of WooCommerce orders to HubSpot pipeline stages', 'hub-woo-sync' ); ?></span>
+                <th><label for="hubspot_pipeline_online"><?php esc_html_e( 'Online Orders Pipeline', 'hub-woo-sync' ); ?></label></th>
+                    <p><?php esc_html_e( 'Pipeline for customer-initiated online orders.', 'hub-woo-sync' ); ?></p>
+                <th><label for="hubspot_pipeline_manual"><?php esc_html_e( 'Manual Orders Pipeline', 'hub-woo-sync' ); ?></label></th>
+                    <p><?php esc_html_e( 'Pipeline for admin-created manual orders (e.g., after a customer enquiry).', 'hub-woo-sync' ); ?></p>
+                                <option value=""><?php esc_html_e( '— Select Stage —', 'hub-woo-sync' ); ?></option>
+        <h4><?php esc_html_e( 'Quote & Invoice Stage Mapping', 'hub-woo-sync' ); ?></h4>
+        $quote_invoice_stage_fields = [
+            'hubspot_stage_quote_sent'     => __( 'Quote Sent Stage', 'hub-woo-sync' ),
+            'hubspot_stage_quote_accepted' => __( 'Quote Accepted Stage', 'hub-woo-sync' ),
+            'hubspot_stage_invoice_sent'   => __( 'Invoice Sent Stage', 'hub-woo-sync' ),
+        ];
+            <h5><?php echo esc_html( ucfirst( $type ) ); ?> <?php esc_html_e( 'Orders', 'hub-woo-sync' ); ?></h5>
+                                <option value=""><?php esc_html_e( '— Select Stage —', 'hub-woo-sync' ); ?></option>
+
                 });
             }
 

@@ -20,6 +20,13 @@ if ( ! defined( 'HUBSPOT_WC_SYNC_PATH' ) ) {
     define( 'HUBSPOT_WC_SYNC_URL', plugin_dir_url( __FILE__ ) );
 }
 
+add_action(
+    'plugins_loaded',
+    static function () {
+        load_plugin_textdomain( 'hub-woo-sync', false, basename( dirname( __FILE__ ) ) . '/languages' );
+    }
+);
+
 // Define HubSpot OAuth constants from saved options
 if ( ! defined( 'HUBSPOT_CLIENT_ID' ) ) {
     define( 'HUBSPOT_CLIENT_ID', get_option( 'hubspot_client_id', '' ) );
