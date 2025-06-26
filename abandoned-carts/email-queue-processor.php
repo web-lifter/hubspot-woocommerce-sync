@@ -9,7 +9,8 @@ if (!defined('ABSPATH')) exit;
 add_action('hubspot_process_abandoned_queue', 'hubspot_process_abandoned_email_queue');
 
 function hubspot_process_abandoned_email_queue() {
-    global $wpdb;
+        hubwoo_log("[ABANDONED EMAIL] Sent '{$subject}' to {$email} [Queue ID: {$entry->id}]");
+
 
     $now = current_time('timestamp');
 

@@ -31,8 +31,10 @@ function import_hubspot_order_ajax() {
         <hr>
     <?php
 
-    // === Orders Table ===
-    require_once plugin_dir_path(__FILE__) . 'hub-order-management.php';
+    hubwoo_log("[IMPORT] Syncing deal ID $deal_id");
+                hubwoo_log("[IMPORT] ⚠️ No stages found for pipeline ID {$pipeline_id}.");
+            hubwoo_log("[IMPORT] ❌ Failed to fetch pipeline stages: " . $pipeline_response->get_error_message(), 'error');
+
     render_hubspot_orders_page_table_only(); // Move table rendering logic into this function
 
     ?>
@@ -112,10 +114,14 @@ function import_hubspot_order_ajax() {
         }
     }
 
-    // Check for existing order
-    $existing = wc_get_orders([
-        'limit' => 1,
-        'meta_key' => 'hubspot_deal_id',
+        if (is_wp_error($deal_update_response) || !empty($update_body['status'])) {
+            hubwoo_log("[IMPORT] ❌ Failed to update deal stage/order ID for deal #{$deal_id}. Response: " . print_r($update_body, true), 'error');
+        } else {
+            hubwoo_log("[IMPORT] ✅ Deal #{$deal_id} updated to stage '{$new_stage}' and order ID '{$order_number}'.");
+        }
+    } else {
+        hubwoo_log("[IMPORT] ⚠️ No stage mapping found for order status '{$status_key}'");
+    }
         'meta_value' => $deal_id,
         'return' => 'ids'
     ]);

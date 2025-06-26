@@ -1,19 +1,37 @@
-<?php
-/**
- * HubSpot Pipeline Sync Logic with Verbose Logging
- */
-
-if (!defined('ABSPATH')) exit;
-
-add_action('woocommerce_order_status_changed', 'sync_order_status_to_hubspot_pipeline', 10, 4);
-
-/**
- * Sync WooCommerce status to HubSpot deal stage
- */
-function sync_order_status_to_hubspot_pipeline($order_id, $old_status, $new_status, $order) {
-    $log_prefix = "[HubSpot Sync] Order #{$order_id}:";
-
-    if (get_option('hubspot_pipeline_sync_enabled') !== 'yes') {
+    if (get_option('hubspot_pipeline_sync_enabled') !== 'yes') {
+        hubwoo_log("{$log_prefix} ❌ Sync is disabled in settings.", 'error');
+        return;
+    }
+        hubwoo_log("{$log_prefix} ❌ WP Error: " . $error_message, 'error');
+        hubwoo_log("{$log_prefix} ❌ API error: " . $error_message, 'error');
+        hubwoo_log("{$log_prefix} ✅ Deal #{$deal_id} updated to stage '{$deal_stage}'");
+    if ($deal_stage === '') {
+        hubwoo_log("{$log_prefix} ⚠️ HubSpot stage is empty for key '{$status_key}' — skipping.");
+        return;
+    }
+    if (!$deal_id || !is_numeric($deal_id)) {
+        hubwoo_log("{$log_prefix} ❌ Invalid or missing deal ID.", 'error');
+        return;
+    }
+    if (!$access_token) {
+        hubwoo_log("{$log_prefix} ❌ Access token not found.", 'error');
+        return;
+    }
+    hubwoo_log("{$log_prefix} ✅ Mapped to stage '{$deal_stage}' (status key: '{$status_key}')");
+    hubwoo_log("{$log_prefix} 📡 Sending PATCH to: {$update_url}");
+    hubwoo_log("{$log_prefix} 📦 Payload: " . json_encode($update_payload));
+    if (is_wp_error($response)) {
+        hubwoo_log("{$log_prefix} ❌ WP Error: " . $response->get_error_message(), 'error');
+        return;
+    }
+    hubwoo_log("{$log_prefix} 🌐 HubSpot response code: {$code}");
+    hubwoo_log("{$log_prefix} 🔍 HubSpot response body: " . print_r($body, true));
+        hubwoo_log("{$log_prefix} ❌ API error: " . print_r($body, true), 'error');
+    } else {
+        hubwoo_log("{$log_prefix} ✅ Deal #{$deal_id} updated to stage '{$deal_stage}'");
+    }
+        hubwoo_log("[HubSpot Sync] ❌ Table '{$table}' does not exist.", 'error');
+        hubwoo_log("[HubSpot Sync] ❌ No access token found in '{$table}'.", 'error');
         error_log("{$log_prefix} ❌ Sync is disabled in settings.");
     $response = wp_remote_request($update_url, [
         'method' => 'PATCH',
