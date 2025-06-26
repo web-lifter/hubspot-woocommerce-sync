@@ -1,71 +1,59 @@
-    check_ajax_referer('send_quote_email_nonce', 'security');
-    if ( ! current_user_can( 'manage_woocommerce' ) ) {
-        wp_send_json_error( __( 'Unauthorized', 'hub-woo-sync' ), 403 );
-    }
-
-        wp_send_json_error( __( 'Unauthorized', 'hub-woo-sync' ), 403 );
-    if (!$order) wp_send_json_error(__( 'Invalid Order ID.', 'hub-woo-sync' ));
-    if (!$email) wp_send_json_error(__( 'No customer email found.', 'hub-woo-sync' ));
-
-    wp_send_json_success(__( 'Quote sent successfully.', 'hub-woo-sync' ));
-    if (!$order) wp_send_json_error(__( 'Invalid Order ID.', 'hub-woo-sync' ));
-    wp_send_json_success(__( 'Quote status reset.', 'hub-woo-sync' ));
-
+<?php
 
-function get_order_quote_status_info($order) {    $accept_url = site_url('/?accept_quote=yes&order_id=' . $order_id);add_action('init', 'hubwoo_handle_quote_acceptance_placeholder');
-function hubwoo_handle_quote_acceptance_placeholder() {
-function hubwoo_send_invoice_placeholder($order_id) {
-    $last_sent = $order->get_meta('quote_last_sent');
-    $last_modified = $order->get_date_modified();
-    $is_outdated = false;
-
-    if ($last_sent && $last_modified) {
-        $is_outdated = strtotime($last_modified->date('Y-m-d H:i:s')) > strtotime($last_sent);
-    }
-
-    return [
-        'status' => $status,
-        'last_sent' => $last_sent,
-        'is_outdated' => $is_outdated,
-    ];
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
 }
 
-add_action('wp_ajax_send_quote_email', function () {
-    check_ajax_referer('send_quote_email_nonce', 'security');
+function hubwoosync_get_order_quote_status_info($order) {
+    $status = $order->get_meta('quote_status') ?: 'Quote Not Sent';
+    $order = wc_get_order($order_id);
+    $accept_url = site_url('/?accept_quote=yes&order_id=' . $order_id);
+    $subject = sprintf('[Steelmark Quote] Quote #%s for %s',
+        $order->get_order_number(),
+        $order->get_billing_first_name()
+    );
 
-    $order_id = intval($_POST['order_id']);
-add_action('wp_ajax_reset_quote_status', function () {
-    check_ajax_referer('reset_quote_status_nonce', 'security');
-    if ( ! current_user_can( 'manage_woocommerce' ) ) {
-        wp_send_json_error( 'Unauthorized', 403 );
-    }
-    if (!$order) wp_send_json_error('Invalid Order ID.');
+    ob_start();
+    wc_get_template('emails/email-header.php', [], '', get_stylesheet_directory() . '/woocommerce/');
+    wc_get_template('emails/customer-quote.php', ['order' => $order, 'accept_url' => $accept_url], '', get_stylesheet_directory() . '/woocommerce/');
+    wc_get_template('emails/email-footer.php', [], '', get_stylesheet_directory() . '/woocommerce/');
+    $message = ob_get_clean();
 
-    $email = $order->get_billing_email();
-    if (!$email) wp_send_json_error('No customer email found.');
+    $headers = [
+        'Reply-To: website@steelmark.com.au',
+        'Return-Path: website@steelmark.com.au',
+        'X-Priority: 3 (Normal)'
+    ];
 
-    $accept_url = site_url('/?accept_quote=yes&order_id=' . $order_id);add_action('init', 'hubwoo_handle_quote_acceptance');
-function hubwoo_handle_quote_acceptance() {
-        $manual = is_order_manual($order);
-        $quote_accepted_stage_id = $manual
-            ? get_option('hubspot_stage_quote_accepted_manual')
-            : get_option('hubspot_stage_quote_accepted_online');
-        if ($quote_accepted_stage_id) {
-            update_hubspot_deal_stage($order_id, $quote_accepted_stage_id);
-        }
+    $sent = wp_mail($email, $subject, $message, $headers);
+    $now = current_time('mysql', true);
+
+    $order->update_meta_data('quote_status', 'Quote Sent');
+    $order->update_meta_data('quote_last_sent', $now);
+    hubwoosync_update_hubspot_deal_stage($order_id, $stage_id); // <-- move this out of logging
+    hubwoosync_log_email_in_hubspot($order_id, 'quote');
+});
+
+
+add_action('init', 'hubwoosync_handle_quote_acceptance');
+function hubwoosync_handle_quote_acceptance() {
+        error_log("[ERROR] Invalid order ID in hubwoosync_handle_quote_acceptance: {$order_id}");
+        $order->update_meta_data('quote_status', 'Quote Accepted');
+        if ($order->get_status() !== 'pending_payment') {
+            $order->update_status('pending_payment', 'Quote accepted by customer');
+        }
+        hubwoosync_update_hubspot_deal_stage($order_id, $accepted_stage_id);
+        hubwoosync_log_email_in_hubspot($order_id, 'quote_accepted');
+        hubwoosync_send_invoice($order_id);
+            hubwoosync_send_invoice($order);
+function hubwoosync_send_invoice($order_id) {
+    hubwoosync_log_email_in_hubspot($order->get_id(), 'invoice');
+    hubwoosync_update_hubspot_deal_stage($order->get_id(), $stage_id); // ← THIS MUST BE CALLED
+function hubwoosync_update_hubspot_deal_stage($order_id, $stage_id) {
+        error_log("[ERROR] Invalid order in hubwoosync_update_hubspot_deal_stage(): {$order_id}");
+function hubwoosync_log_email_in_hubspot($order_id, $email_type = 'general', $subject_override = null, $body_override = null) {
+        error_log("[HubSpot][ERROR] Invalid order object in hubwoosync_log_email_in_hubspot().");
 
-        $order->save(); // <-- FIXED
-add_action('init', 'hubwoo_handle_quote_acceptance');
-
-add_action('init', 'hubwoosync_handle_quote_acceptance');
-function hubwoosync_handle_quote_acceptance() {
-        hubwoosync_send_invoice($order_id);
-            hubwoosync_send_invoice($order);
-function hubwoosync_send_invoice($order_id) {
-        'MIME-Version: 1.0',
-        'Content-Type: text/html; charset=UTF-8',
-        'From: Steelmark <website@steelmark.com.au>',
-        hubwoo_log("[ERROR] Invalid order ID in handle_quote_acceptance: {$order_id}", 'error');
         hubwoo_log("[ERROR] Could not retrieve HubSpot access token", 'error');
         hubwoo_log("[ERROR] HubSpot stage update failed with status {$status} for deal {$deal_id}. Response: {$error_body}", 'error');
 

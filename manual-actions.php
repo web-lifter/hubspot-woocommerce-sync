@@ -1,58 +1,36 @@
-    if ( ! current_user_can( 'manage_woocommerce' ) ) {
-        wp_send_json_error( 'Unauthorized', 403 );
-    }
-    $dealstage_id = $deal['dealstage'] ?? '';
-
-    if (!isset($_POST['security']) || !wp_verify_nonce($_POST['security'], 'send_invoice_email_nonce')) {
-        wp_send_json_error(__( 'Invalid security token.', 'hub-woo-sync' ));
-    }
-    if ( ! current_user_can( 'manage_woocommerce' ) ) {
-        wp_send_json_error( 'Unauthorized', 403 );
-    }
-
-    check_ajax_referer('manual_sync_hubspot_order_nonce', 'security');
-    if ( ! current_user_can( 'manage_woocommerce' ) ) {
-        wp_send_json_error( 'Unauthorized', 403 );
-    }
-    if ( ! current_user_can( 'manage_woocommerce' ) ) {
-        wp_send_json_error( 'Unauthorized', 403 );
-    }
-
-    $type = hubwoosync_order_type($order);
-
-        wp_send_json_error(__( 'Customer email not found.', 'hub-woo-sync' ));
-    wp_send_json_success(__( 'Invoice sent successfully.', 'hub-woo-sync' ));
-    if (!$order) wp_send_json_error(__( 'Invalid Order ID.', 'hub-woo-sync' ));
-    if (!$deal_id) wp_send_json_error(__( 'Order not linked to a HubSpot deal.', 'hub-woo-sync' ));
-    if (!$deal) wp_send_json_error(__( 'Failed to fetch deal from HubSpot.', 'hub-woo-sync' ));
-
-add_action('wp_ajax_manual_sync_hubspot_order', 'hubwoo_manual_sync_hubspot_order');
-function hubwoo_manual_sync_hubspot_order() {
-function hubwoo_create_hubspot_deal_manual() {
-
-    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;    $type = order_type($order);
-    $invoice_stage_id = $type === 'manual'
-        ? get_option('hubspot_stage_invoice_sent_manual')
-        : get_option('hubspot_stage_invoice_sent_online');
-
+<?php
+/**
+ * Manual Helper Functions
+ *
+ * @package Steelmark
+ */
+
+// Exit if accessed directly.
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
+
+function hubwoosync_send_invoice_email_ajax() {
+    if (!$email) {
+        wp_send_json_error('Customer email not found.');
+    hubwoosync_log_email_in_hubspot($order_id, "invoice");
     if ($invoice_stage_id) {
-        update_hubspot_deal_stage($order_id, $invoice_stage_id);
+        hubwoosync_update_hubspot_deal_stage($order_id, $invoice_stage_id);
     }
+add_action('wp_ajax_send_invoice_email', 'hubwoosync_send_invoice_email_ajax');
+add_action('wp_ajax_hubwoosync_manual_sync_hubspot_order', 'hubwoosync_manual_sync_hubspot_order');
+function hubwoosync_manual_sync_hubspot_order() {
+    check_ajax_referer('hubwoosync_manual_sync_hubspot_order_nonce', 'security');
+    $dealstage_id = $deal['dealstage'] ?? '';
+    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;
+    foreach ($order->get_items() as $id => $item) $order->remove_item($id);
+    foreach ($order->get_items('shipping') as $id => $item) $order->remove_item($id);
+
+    if (!empty($deal['contacts'])) {
+        if ($contact) {
+            $order->set_billing_first_name($contact['firstname'] ?? '');
+        if ($company) {
 
-    log_email_in_hubspot($order_id, 'invoice');
-
-    // Validate request
-    if (!isset($_POST['security']) || !wp_verify_nonce($_POST['security'], 'send_invoice_email_nonce')) {
-        wp_send_json_error('Invalid security token.');
-    }
-
-    $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
-    $order = wc_get_order($order_id);
-
-    if (!$order) {
-        wp_send_json_error('Invalid Order ID.');
-    }
-
     $email = $order->get_billing_email();
 
     }
@@ -110,8 +88,9 @@ function hubwoo_create_hubspot_deal_manual() {
 function create_hubspot_deal_manual() {
     wp_send_json_success(__( 'Order updated with latest HubSpot deal info.', 'hub-woo-sync' ));
     if (!$order) wp_send_json_error(__( 'Invalid Order ID.', 'hub-woo-sync' ));
-        wp_send_json_error(__( 'Order already has a HubSpot deal.', 'hub-woo-sync' ));
-        wp_send_json_error(__( 'No HubSpot access token available.', 'hub-woo-sync' ));
+        wp_send_json_error(__( 'Order already has a HubSpot deal.', 'hub-woo-sync' ));add_action('wp_ajax_hubwoosync_create_hubspot_deal_manual', 'hubwoosync_create_hubspot_deal_manual');
+function hubwoosync_create_hubspot_deal_manual() {
+
         wp_send_json_error(__( 'Contact creation failed.', 'hub-woo-sync' ));
         wp_send_json_error(__( 'Deal creation failed. Check hubspot-sync.log for details.', 'hub-woo-sync' ));
     wp_send_json_success(__( 'HubSpot deal created successfully.', 'hub-woo-sync' ));
