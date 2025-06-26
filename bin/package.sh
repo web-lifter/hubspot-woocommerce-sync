@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SLUG="xero-x-woocommerce"
+SLUG="hubspot-woocommerce-sync"
 
 
-PLUGIN_FILE="woo-xero-sync.php"
+PLUGIN_FILE="hubspot-woocommerce-sync.php"
 
 if [ ! -f "$PLUGIN_FILE" ]; then
   echo "ERROR: $PLUGIN_FILE not found in working directory $(pwd)" >&2
