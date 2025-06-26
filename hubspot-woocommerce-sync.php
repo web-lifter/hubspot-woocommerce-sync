@@ -7,6 +7,7 @@ Version: 1.0.0
 Author: Weblifter
 Author URI: https://weblifter.com.au
 License: GPL-3.0
+Text Domain: Hub-Woo-Sync
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
