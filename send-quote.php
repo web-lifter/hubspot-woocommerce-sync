@@ -27,8 +27,10 @@ function hubwoosync_get_order_quote_status_info($order) {
         'X-Priority: 3 (Normal)'
     ];
 
-    $sent = wp_mail($email, $subject, $message, $headers);
-    $now = current_time('mysql', true);
+    wp_send_json_success( __( 'Quote sent successfully.', 'hubspot-woocommerce-sync' ) );
+    if (!$order) wp_send_json_error( __( 'Invalid Order ID.', 'hubspot-woocommerce-sync' ) );
+    wp_send_json_success( __( 'Quote status reset.', 'hubspot-woocommerce-sync' ) );
+
 
     $order->update_meta_data('quote_status', 'Quote Sent');
     $order->update_meta_data('quote_last_sent', $now);

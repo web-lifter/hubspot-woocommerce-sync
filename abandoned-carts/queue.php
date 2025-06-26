@@ -1,11 +1,16 @@
 add_action('wp_ajax_manually_trigger_abandoned_email', function () {
     if ( ! current_user_can( 'manage_woocommerce' ) ) {
-        wp_send_json_error( 'Unauthorized', 403 );
+        wp_send_json_error( __( 'Unauthorized', 'hubspot-woocommerce-sync' ), 403 );
     }
     global $wpdb;
-
-add_action('wp_ajax_manually_trigger_abandoned_email', function () {
-    global $wpdb;
+    if ( ! $email_id ) {
+        wp_send_json_error( __( 'Missing ID.', 'hubspot-woocommerce-sync' ) );
+    }
+    if ( ! $row || $row['status'] !== 'pending' ) {
+        wp_send_json_error( __( 'Email not found or already sent.', 'hubspot-woocommerce-sync' ) );
+    }
+        wp_send_json_error( __( 'Send failed.', 'hubspot-woocommerce-sync' ) );
+    }
 
     $email_id = absint($_POST['email_id']);
     if (!$email_id) wp_send_json_error('Missing ID.');

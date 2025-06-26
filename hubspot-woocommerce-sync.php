@@ -7,7 +7,7 @@ Version: 1.0.0
 Author: Weblifter
 Author URI: https://weblifter.com.au
 License: GPL-3.0
-Text Domain: Hub-Woo-Sync
+Text Domain: hubspot-woocommerce-sync
 */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,7 +27,7 @@ if ( ! defined( 'HUBSPOT_WC_SYNC_PATH' ) ) {
 
 // Load translations
 add_action( 'plugins_loaded', function() {
-    load_plugin_textdomain( 'hub-woo-sync', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
+    load_plugin_textdomain( 'hubspot-woocommerce-sync', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
 } );
 
 // Define HubSpot OAuth constants from saved options

@@ -126,7 +126,8 @@ function refresh_hubspot_access_token($portal_id, $refresh_token) {
         return refresh_hubspot_access_token($portal_id, $refresh_token);
     }
 
-    error_log("[HubSpot OAuth] ❌ No stored token found.", 3, $log_file);
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return new WP_REST_Response( [ 'error' => __( 'Unauthorized', 'hubspot-woocommerce-sync' ) ], 403 );
     return false;
 }
 
