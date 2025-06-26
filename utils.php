@@ -30,10 +30,36 @@ function hubwoo_log( $message, $level = 'info' ) {
     }
 }
 
-    exit;
-}
-
-function order_type(WC_Order $order) {
-    return $order->get_meta('order_type') ?: 'online';
-}
-
+<<<<<<< codex/prefix-functions-with-hubwoosync_-prefix
+function hubwoosync_order_type(WC_Order $order) {
+    return $order->get_meta('order_type') ?: 'online';
+}
+
+ *
+
+ * @package Steelmark
+
+ */
+
+
+
+// Exit if accessed directly.
+
+if ( ! defined( 'ABSPATH' ) ) {
+
+=======
+>>>>>>> main
+    exit;
+
+}
+
+
+
+function order_type(WC_Order $order) {
+
+    return $order->get_meta('order_type') ?: 'online';
+
+}
+
+
+

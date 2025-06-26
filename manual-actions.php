@@ -18,9 +18,11 @@ function hubwoo_manual_sync_hubspot_order() {
         wp_send_json_error( 'Unauthorized', 403 );
     }
 
-    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;    $type = hubwoo_order_type($order);
+    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;    $type = hubwoosync_order_type($order);
+    $type = hubwoosync_order_type($order);
+add_action('wp_ajax_hubwoosync_manual_sync_hubspot_order', 'hubwoosync_manual_sync_hubspot_order');
+function hubwoosync_manual_sync_hubspot_order() {
 
-    $type = hubwoo_order_type($order);
 add_action('wp_ajax_send_invoice_email', 'hubwoo_send_invoice_email_ajax');
 add_action('wp_ajax_manual_sync_hubspot_order', 'hubwoo_manual_sync_hubspot_order');
 function hubwoo_manual_sync_hubspot_order() {
@@ -109,7 +111,8 @@ function create_hubspot_deal_manual() {
     if ( ! current_user_can( 'manage_woocommerce' ) ) {
         wp_send_json_error( 'Unauthorized', 403 );
     }
-    foreach ($order->get_items('shipping') as $id => $item) $order->remove_item($id);
+add_action('wp_ajax_hubwoosync_create_hubspot_deal_manual', 'hubwoosync_create_hubspot_deal_manual');
+function hubwoosync_create_hubspot_deal_manual() {
 add_action('wp_ajax_create_hubspot_deal_manual', 'hubwoo_create_hubspot_deal_manual');
 function hubwoo_create_hubspot_deal_manual() {
     // 📦 Billing

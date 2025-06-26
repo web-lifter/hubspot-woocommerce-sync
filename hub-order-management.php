@@ -103,8 +103,9 @@ function render_hubspot_orders_page_table_only() {
         <th>Quote Status</th>
         <th>Invoice Status</th>
         <th>Sync</th>
-        <th>Actions</th>
-    </tr></thead><tbody>';
+        <th>Actions</th>            postAction("hubwoosync_manual_sync_hubspot_order", btn.data("order-id"), btn.data("nonce"), btn, "Order synced!", "Sync failed");
+                "hubwoosync_create_hubspot_deal_manual",
+
 
     foreach ($orders as $order) {
         $order_id = $order->get_id();

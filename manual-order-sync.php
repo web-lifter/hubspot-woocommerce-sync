@@ -38,7 +38,8 @@
     }
 
     // Get HubSpot deal ID
-    $deal_id = $order->get_meta('hubspot_deal_id');
+add_action('woocommerce_new_order', 'hubwoosync_set_manual_order_type_for_rest_api', 30, 2);
+function hubwoosync_set_manual_order_type_for_rest_api($order_id, $order) {
     if (!$deal_id || !is_numeric($deal_id)) {
         error_log("[HUBSPOT] ❌ Invalid or missing deal ID for Order #{$order_id}");
         return;

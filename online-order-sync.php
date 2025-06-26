@@ -1,5 +1,7 @@
-<?php
-/**
+add_action('woocommerce_new_order', 'hubwoosync_set_order_type_for_online_orders', 20, 2);
+add_action('woocommerce_new_order', 'hubwoosync_set_order_type_for_online_orders', 20, 2);
+function hubwoosync_set_order_type_for_online_orders($order_id, $order) {
+
  * Auto-sync WooCommerce Online Orders to HubSpot with Logging
  */
 
