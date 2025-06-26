@@ -5,8 +5,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function hubwoosync_get_order_quote_status_info($order) {
-    $status = $order->get_meta('quote_status') ?: 'Quote Not Sent';
-    $order = wc_get_order($order_id);
+        hubwoo_log("[ERROR] Invalid order ID in hubwoosync_handle_quote_acceptance: {$order_id}");
+        hubwoo_log("[ERROR] Invalid order in hubwoosync_update_hubspot_deal_stage(): {$order_id}");
+        hubwoo_log("[HubSpot][ERROR] Invalid order object in hubwoosync_log_email_in_hubspot().");
+
     $accept_url = site_url('/?accept_quote=yes&order_id=' . $order_id);
     $subject = sprintf('[Steelmark Quote] Quote #%s for %s',
         $order->get_order_number(),
@@ -44,7 +46,8 @@ function hubwoosync_handle_quote_acceptance() {
         }
         hubwoosync_update_hubspot_deal_stage($order_id, $accepted_stage_id);
         hubwoosync_log_email_in_hubspot($order_id, 'quote_accepted');
-        hubwoosync_send_invoice($order_id);
+        hubwoo_log("[ERROR] Invalid order ID in handle_quote_acceptance: {$order_id}");
+
             hubwoosync_send_invoice($order);
 function hubwoosync_send_invoice($order_id) {
     hubwoosync_log_email_in_hubspot($order->get_id(), 'invoice');
@@ -111,14 +114,21 @@ function handle_quote_acceptance() {
         return;
     }
 
-    $order_id = absint($_GET['order_id']);
-    $order = wc_get_order($order_id);
-    if (!$order) {
-        error_log("[ERROR] Invalid order ID in handle_quote_acceptance: {$order_id}");
-        return;
-    }
-
-    $current_status = $order->get_meta('quote_status');
+    $order_id = absint($_GET['order_id']);        hubwoo_log("[ERROR] Invalid order in update_hubspot_deal_stage(): {$order_id}");
+        hubwoo_log("[ERROR] Missing hubspot_deal_id for Order #{$order_id}");
+        hubwoo_log("[ERROR] Could not retrieve HubSpot access token");
+        hubwoo_log("[ERROR] HubSpot stage update failed with status {$status} for deal {$deal_id}. Response: {$error_body}");
+    hubwoo_log("[DEBUG] HubSpot deal {$deal_id} stage updated to {$stage_id}");
+        hubwoo_log("[HubSpot][ERROR] Invalid order object in log_email_in_hubspot().");
+        hubwoo_log("[HubSpot][ERROR] No valid HubSpot Deal ID found for Order #{$order_id}");
+        hubwoo_log("[HubSpot][ERROR] No customer email found for Order #{$order_id}");
+        hubwoo_log("[HubSpot][ERROR] Email creation failed: " . $email_response->get_error_message());
+        hubwoo_log("[HubSpot][ERROR] Failed to create email object: " . print_r($email_response_body, true));
+    hubwoo_log("[HubSpot][DEBUG] Created email ID {$email_id} for Order #{$order_id}");
+        hubwoo_log("[HubSpot][ERROR] Email association failed: " . $association_response->get_error_message());
+        hubwoo_log("[HubSpot][ERROR] Association error: " . print_r($association_response_body, true));
+        hubwoo_log("[HubSpot][DEBUG] Email associated with Deal ID {$deal_id}");
+
     if ($current_status !== 'Quote Accepted') {
         $order->update_meta_data('quote_status', 'Quote Accepted');        hubwoo_log("[ERROR] Invalid order in update_hubspot_deal_stage(): {$order_id}", 'error');
         hubwoo_log("[ERROR] Invalid order in update_hubspot_deal_stage(): {$order_id}", 'error');

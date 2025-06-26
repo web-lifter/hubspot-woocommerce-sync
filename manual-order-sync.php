@@ -20,11 +20,15 @@
     ]);
         hubwoo_log("[HUBSPOT] ❌ Failed to update PayWay number for Deal ID {$deal_id}. Response: " . $error_message, 'error');
         hubwoo_log("[HUBSPOT] ✅ PayWay order number '{$payway_order_number}' synced for Deal ID {$deal_id}", 'error');
-        hubwoo_log("[HUBSPOT] ❌ No PayWay order number found for Order #{$order_id}", 'error');
-        hubwoo_log("[HUBSPOT] ❌ Invalid or missing deal ID for Order #{$order_id}", 'error');
-        hubwoo_log("[HUBSPOT] ❌ Access token not available", 'error');
-        hubwoo_log("[Order Type] Order #$order_id created in admin — marked as manual.", 'error');
-        hubwoo_log("[HUBSPOT] ❌ Failed to update PayWay number for Deal ID {$deal_id}. Response: " . print_r($body, true), 'error');
+        hubwoo_log("[HUBSPOT] ✅ PayWay order number '{$payway_order_number}' synced for Deal ID {$deal_id}");
+        hubwoo_log("[HUBSPOT] ❌ No PayWay order number found for Order #{$order_id}");
+        hubwoo_log("[HUBSPOT] ❌ Invalid or missing deal ID for Order #{$order_id}");
+        hubwoo_log("[HUBSPOT] ❌ Access token not available");
+        hubwoo_log("[Order Type] Order #$order_id created in admin — marked as manual.");
+
+        hubwoo_log("[HUBSPOT] ❌ Failed to update PayWay number for Deal ID {$deal_id}. Response: " . print_r($body, true));
+        hubwoo_log("[HUBSPOT] ✅ PayWay order number '{$payway_order_number}' synced for Deal ID {$deal_id}");
+        hubwoo_log("[Order Type] Order #$order_id created via REST or CLI — marked as manual.");
         hubwoo_log("[HUBSPOT] ✅ PayWay order number '{$payway_order_number}' synced for Deal ID {$deal_id}", 'error');
         hubwoo_log("[Order Type] Order #$order_id created via REST or CLI — marked as manual.", 'error');
         error_log("[HUBSPOT] ✅ PayWay order number '{$payway_order_number}' synced for Deal ID {$deal_id}");
