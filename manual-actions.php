@@ -18,8 +18,10 @@ function hubwoo_manual_sync_hubspot_order() {
         wp_send_json_error( 'Unauthorized', 403 );
     }
 
-        wp_send_json_error(__( 'Invalid security token.', 'hub-woo-sync' ));
-        wp_send_json_error(__( 'Invalid Order ID.', 'hub-woo-sync' ));
+    $pipeline_label = $labels['pipelines'][$pipeline_id] ?? $pipeline_id;    $type = hubwoosync_order_type($order);
+
+    $type = hubwoosync_order_type($order);
+
         wp_send_json_error(__( 'Customer email not found.', 'hub-woo-sync' ));
     wp_send_json_success(__( 'Invoice sent successfully.', 'hub-woo-sync' ));
     if (!$order) wp_send_json_error(__( 'Invalid Order ID.', 'hub-woo-sync' ));
