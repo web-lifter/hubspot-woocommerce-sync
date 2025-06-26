@@ -61,8 +61,10 @@ function hubwoo_send_invoice($order_id) {
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset=UTF-8',
         'From: Steelmark <website@steelmark.com.au>',
-        'Reply-To: website@steelmark.com.au',
-        'Return-Path: website@steelmark.com.au',
+        hubwoo_log("[ERROR] Invalid order ID in handle_quote_acceptance: {$order_id}", 'error');
+        hubwoo_log("[ERROR] Could not retrieve HubSpot access token", 'error');
+        hubwoo_log("[ERROR] HubSpot stage update failed with status {$status} for deal {$deal_id}. Response: {$error_body}", 'error');
+
         'X-Mailer: PHP/' . phpversion(),
         $manual = is_order_manual($order);
         $accepted_stage_option = $manual ? 'hubspot_stage_quote_accepted_manual' : 'hubspot_stage_quote_accepted_online';
@@ -126,20 +128,20 @@ function handle_quote_acceptance() {
 
     $current_status = $order->get_meta('quote_status');
     if ($current_status !== 'Quote Accepted') {
-        $order->update_meta_data('quote_status', 'Quote Accepted');
-    $access_token = manage_hubspot_access_token();
-    if (is_wp_error($access_token) || !$access_token) {
-        $error_message = is_wp_error($access_token) ? $access_token->get_error_message() : 'Access token not available';
-        error_log("[ERROR] Could not retrieve HubSpot access token");
-        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
-        return;
-    }
-    $status = wp_remote_retrieve_response_code($response);
-    if ($status !== 200) {
-        $error_body = wp_remote_retrieve_body($response);
-        error_log("[ERROR] HubSpot stage update failed with status {$status} for deal {$deal_id}. Response: {$error_body}");
-        $order->add_order_note('❌ HubSpot sync failed: ' . $error_body);
-        return;
+        $order->update_meta_data('quote_status', 'Quote Accepted');        hubwoo_log("[ERROR] Invalid order in update_hubspot_deal_stage(): {$order_id}", 'error');
+        hubwoo_log("[ERROR] Missing hubspot_deal_id for Order #{$order_id}", 'error');
+        hubwoo_log("[ERROR] Could not retrieve HubSpot access token", 'error');
+        hubwoo_log("[ERROR] HubSpot stage update failed with status {$status} for deal {$deal_id}. Response: {$error_body}", 'error');
+    hubwoo_log("[DEBUG] HubSpot deal {$deal_id} stage updated to {$stage_id}");
+        hubwoo_log("[HubSpot][ERROR] Invalid order object in log_email_in_hubspot().", 'error');
+        hubwoo_log("[HubSpot][ERROR] No valid HubSpot Deal ID found for Order #{$order_id}", 'error');
+        hubwoo_log("[HubSpot][ERROR] No customer email found for Order #{$order_id}", 'error');
+        hubwoo_log("[HubSpot][ERROR] Email creation failed: " . $email_response->get_error_message(), 'error');
+        hubwoo_log("[HubSpot][ERROR] Failed to create email object: " . print_r($email_response_body, true), 'error');
+    hubwoo_log("[HubSpot][DEBUG] Created email ID {$email_id} for Order #{$order_id}");
+        hubwoo_log("[HubSpot][ERROR] Email association failed: " . $association_response->get_error_message(), 'error');
+        hubwoo_log("[HubSpot][ERROR] Association error: " . print_r($association_response_body, true), 'error');
+        hubwoo_log("[HubSpot][DEBUG] Email associated with Deal ID {$deal_id}");
     }
 
         $quote_accepted_stage_id = $type === 'manual'

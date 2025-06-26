@@ -1,9 +1,12 @@
-<?php
-
-add_action('woocommerce_order_status_completed', 'update_hubspot_with_payway_order_number');    $token = manage_hubspot_access_token();
-    if (is_wp_error($token) || !$token) {
-        $error_message = is_wp_error($token) ? $token->get_error_message() : 'Access token not available';
-        error_log("[HUBSPOT] ❌ Access token not available");
+        hubwoo_log("[HUBSPOT] ❌ Access token not available", 'error');
+        hubwoo_log("[HUBSPOT] ❌ Failed to update PayWay number for Deal ID {$deal_id}. Response: " . $error_message, 'error');
+        hubwoo_log("[HUBSPOT] ✅ PayWay order number '{$payway_order_number}' synced for Deal ID {$deal_id}");
+        hubwoo_log("[HUBSPOT] ❌ No PayWay order number found for Order #{$order_id}", 'error');
+        hubwoo_log("[HUBSPOT] ❌ Invalid or missing deal ID for Order #{$order_id}", 'error');
+        hubwoo_log("[HUBSPOT] ❌ Access token not available", 'error');
+        hubwoo_log("[HUBSPOT] ❌ Failed to update PayWay number for Deal ID {$deal_id}. Response: " . print_r($body, true), 'error');
+        hubwoo_log("[HUBSPOT] ✅ PayWay order number '{$payway_order_number}' synced for Deal ID {$deal_id}");
+        hubwoo_log("[Order Type] Order #$order_id created via REST or CLI — marked as manual.");
         $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
         return;
     }

@@ -14,6 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Allow verbose logging when enabled.
+if ( ! defined( 'HUBSPOT_WC_DEBUG' ) ) {
+    define( 'HUBSPOT_WC_DEBUG', false );
+}
+
 // Define plugin path constants
 if ( ! defined( 'HUBSPOT_WC_SYNC_PATH' ) ) {
     define( 'HUBSPOT_WC_SYNC_PATH', plugin_dir_path( __FILE__ ) );
