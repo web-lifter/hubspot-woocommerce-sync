@@ -2,9 +2,12 @@ add_action('woocommerce_new_order', 'hubwoosync_set_order_type_for_online_orders
 add_action('woocommerce_new_order', 'hubwoosync_set_order_type_for_online_orders', 20, 2);
 function hubwoosync_set_order_type_for_online_orders($order_id, $order) {
 
- * Auto-sync WooCommerce Online Orders to HubSpot with Logging
- */
-
+add_action('woocommerce_new_order', 'hubwoosync_set_order_type_for_online_orders', 20, 2);
+add_action('woocommerce_payment_complete', 'hubwoosync_auto_sync_online_order', 10, 1);
+add_action('woocommerce_new_order', 'hubwoosync_set_order_type_for_online_orders', 20, 2);
+add_action('woocommerce_payment_complete', 'hubwoosync_auto_sync_online_order', 10, 1);
+function hubwoosync_set_order_type_for_online_orders($order_id, $order) {
+
 if (!defined('ABSPATH')) exit;
 
 /*
@@ -67,8 +70,8 @@ function set_order_type_for_online_orders($order_id, $order) {
         $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
         return;
     }
-    $contact_id = hubspot_get_or_create_contact($order, $email, $access_token);
-    if (is_wp_error($contact_id) || !$contact_id) {
+add_action('woocommerce_checkout_order_processed', 'hubwoosync_auto_sync_online_order', 20, 1);
+function hubwoosync_auto_sync_online_order($order_id) {
         $error_message = is_wp_error($contact_id) ? $contact_id->get_error_message() : 'Unable to create or fetch contact';
         $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
         return;

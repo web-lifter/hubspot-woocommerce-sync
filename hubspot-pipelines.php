@@ -32,22 +32,23 @@
     }
         hubwoo_log("[HubSpot Sync] ❌ Table '{$table}' does not exist.", 'error');
         hubwoo_log("[HubSpot Sync] ❌ No access token found in '{$table}'.", 'error');
-        error_log("{$log_prefix} ❌ Sync is disabled in settings.");
-    $response = wp_remote_request($update_url, [
-        'method' => 'PATCH',
-        'headers' => [
-            'Authorization' => "Bearer {$access_token}",
-            'Content-Type'  => 'application/json'
-        ],
-        'body' => json_encode($update_payload)
-    ]);
-
-    if (is_wp_error($response)) {
-        $error_message = $response->get_error_message();
-        error_log("{$log_prefix} ❌ WP Error: " . $error_message);
-        $order->add_order_note('❌ HubSpot sync failed: ' . $error_message);
-        return;
-    }
+        hubwoo_log("{$log_prefix} ❌ Sync is disabled in settings.", 'error');
+        hubwoo_log("{$log_prefix} ❌ WP Error: " . $error_message, 'error');
+        hubwoo_log("{$log_prefix} ❌ API error: " . $error_message, 'error');
+        hubwoo_log("{$log_prefix} ✅ Deal #{$deal_id} updated to stage '{$deal_stage}'", 'error');
+        hubwoo_log("{$log_prefix} ⚠️ HubSpot stage is empty for key '{$status_key}' — skipping.", 'error');
+        hubwoo_log("{$log_prefix} ❌ Invalid or missing deal ID.", 'error');
+        hubwoo_log("{$log_prefix} ❌ Access token not found.", 'error');
+    hubwoo_log("{$log_prefix} ✅ Mapped to stage '{$deal_stage}' (status key: '{$status_key}')", 'error');
+    hubwoo_log("{$log_prefix} 📡 Sending PATCH to: {$update_url}", 'error');
+    hubwoo_log("{$log_prefix} 📦 Payload: " . json_encode($update_payload), 'error');
+        hubwoo_log("{$log_prefix} ❌ WP Error: " . $response->get_error_message(), 'error');
+    hubwoo_log("{$log_prefix} 🌐 HubSpot response code: {$code}", 'error');
+    hubwoo_log("{$log_prefix} 🔍 HubSpot response body: " . print_r($body, true), 'error');
+        hubwoo_log("{$log_prefix} ❌ API error: " . print_r($body, true), 'error');
+        hubwoo_log("{$log_prefix} ✅ Deal #{$deal_id} updated to stage '{$deal_stage}'", 'error');
+        hubwoo_log("[HubSpot Sync] ❌ Table '{$table}' does not exist.", 'error');
+        hubwoo_log("[HubSpot Sync] ❌ No access token found in '{$table}'.", 'error');
     if (isset($body['status']) && $body['status'] === 'error') {
         $error_message = print_r($body, true);
         error_log("{$log_prefix} ❌ API error: " . $error_message);

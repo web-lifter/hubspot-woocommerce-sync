@@ -130,11 +130,15 @@
             return [];
         }
 
-    }
-
-    /**
-    * Render HubSpot Authentication Tab
-    */
+    }            hubwoo_log("[HubSpot OAuth] ❌ No valid access token available.", 'error');
+        hubwoo_log("[HubSpot OAuth] 🔍 Fetching pipelines with token: " . substr($access_token, 0, 10) . "...", 'error');
+        hubwoo_log("[HubSpot OAuth] 🔍 Pipelines API HTTP Status Code: " . $http_code, 'error');
+            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message(), 'error');
+        hubwoo_log("[HubSpot OAuth] ✅ Pipelines fetched successfully: " . print_r($pipelines, true), 'error');
+            hubwoo_log("[HubSpot OAuth] ❌ No valid access token available.", 'error');
+            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message(), 'error');
+            hubwoo_log("[HubSpot OAuth] ❌ Invalid API response: 'stages' field missing.", 'error');
+
     private static function render_authentication_settings() {
         $auth_url = get_site_url() . "/wp-json/hubspot/v1/start-auth";
         ?>
@@ -274,10 +278,14 @@
 
     private static function get_pipeline_stages($pipeline_id) {
         global $wpdb;
-        $table_name = $wpdb->prefix . "hubspot_tokens";
-
-        // Ensure token is valid before making API requests
-        check_and_refresh_hubspot_token();
+        hubwoo_log("[HubSpot OAuth] 🔍 Checking connection...", 'error');
+            hubwoo_log("[HubSpot OAuth] ❌ No token found in database.", 'error');
+        hubwoo_log("[HubSpot OAuth] ✅ Token found: " . substr($access_token, 0, 10) . "...", 'error');
+        hubwoo_log("[HubSpot OAuth] 🔍 HTTP Status Code: " . $http_code, 'error');
+            hubwoo_log("[HubSpot OAuth] ❌ API request failed: " . $response->get_error_message(), 'error');
+        hubwoo_log("[HubSpot OAuth] 🔍 HubSpot API Response: " . print_r($body, true), 'error');
+        hubwoo_log("[HubSpot OAuth] ✅ Account Information Retrieved: " . print_r($account_info, true), 'error');
+
 
         $token_data = $wpdb->get_row("SELECT * FROM {$table_name} LIMIT 1", ARRAY_A);
         if (!$token_data || empty($token_data['access_token'])) {

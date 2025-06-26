@@ -33,16 +33,25 @@ function render_hubspot_orders_page_table_only() {
         'failed' => __( 'Failed', 'hub-woo-sync' ),
     ];
     echo '<button class="button">' . esc_html__( 'Filter', 'hub-woo-sync' ) . '</button>';
-        <th><?php echo esc_html__( "Order #", "hub-woo-sync" ); ?></th>
-        <th><?php echo esc_html__( "Customer", "hub-woo-sync" ); ?></th>
-        <th><?php echo esc_html__( "Deal ID", "hub-woo-sync" ); ?></th>
-        <th><?php echo esc_html__( "Order Type", "hub-woo-sync" ); ?></th>
-        <th><?php echo esc_html__( "Total", "hub-woo-sync" ); ?></th>
-        <th><?php echo esc_html__( "Status", "hub-woo-sync" ); ?></th>
-        <th><?php echo esc_html__( "Deal Stage", "hub-woo-sync" ); ?></th>
-        <th><?php echo esc_html__( "Quote Status", "hub-woo-sync" ); ?></th>
-        <th><?php echo esc_html__( "Invoice Status", "hub-woo-sync" ); ?></th>
-        <th><?php echo esc_html__( "Sync", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Order #", "hub-woo-sync" ); ?></th>    echo '<input type="search" name="search" placeholder="' . esc_attr__( 'Customer or Deal ID', 'hub-woo-sync' ) . '" value="' . esc_attr($search) . '" /> ';
+    echo '<select name="status">';
+    $status_options = [
+        '' => __( 'All Statuses', 'hub-woo-sync' ),
+        'pending' => __( 'Pending Payment', 'hub-woo-sync' ),
+        'processing' => __( 'Processing', 'hub-woo-sync' ),
+        'completed' => __( 'Completed', 'hub-woo-sync' ),
+        'failed' => __( 'Failed', 'hub-woo-sync' ),
+    ];
+    echo '<button class="button">' . esc_html__( 'Filter', 'hub-woo-sync' ) . '</button>';
+
+        $quote_status = $order->get_meta('quote_status') ?: __( 'Quote Not Sent', 'hub-woo-sync' );
+        $send_quote_label = ($quote_status === __( 'Quote Sent', 'hub-woo-sync' ) || $quote_status === __( 'Quote Not Accepted', 'hub-woo-sync' )) ? __( 'Resend Quote', 'hub-woo-sync' ) : __( 'Send Quote', 'hub-woo-sync' );
+        $invoice_status = $order->get_meta('invoice_status') ?: __( 'Not Sent', 'hub-woo-sync' );
+        echo '<td><button class="button manual-sync" data-order-id="' . esc_attr($order_id) . '" data-nonce="' . esc_attr($nonces['sync']) . '">' . esc_html__( 'Sync', 'hub-woo-sync' ) . '</button></td>';
+                <button class="button reset-quote" data-order-id="' . esc_attr($order_id) . '" data-nonce="' . esc_attr($nonces['reset']) . '">' . esc_html__( 'Reset Quote', 'hub-woo-sync' ) . '</button>
+                <button class="button send-invoice" data-order-id="' . esc_attr($order_id) . '" data-nonce="' . esc_attr($nonces['invoice']) . '">' . esc_html__( 'Send Invoice', 'hub-woo-sync' ) . '</button>';
+                    echo '<button class="button create-deal" data-order-id="' . esc_attr($order_id) . '" data-nonce="' . esc_attr($nonces['create_deal']) . '">' . esc_html__( 'Create Deal', 'hub-woo-sync' ) . '</button>';
+
 
     if ($status) {
         $query_args['status'] = $status;

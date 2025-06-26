@@ -26,8 +26,9 @@ function hubspot_get_or_create_contact($order, $email, $access_token) {
         ],
         'body' => json_encode($payload)
         hubwoo_log('[HubSpot] Deal creation request failed: ' . $response->get_error_message(), 'error');
+        hubwoo_log('[HubSpot] Deal creation request failed: ' . $response->get_error_message(), 'error');
         hubwoo_log('[HubSpot] Deal creation failed. Response: ' . $response_body, 'error');
-
+
     if (is_wp_error($response)) {
         return null;
     }

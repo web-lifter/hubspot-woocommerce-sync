@@ -73,17 +73,26 @@ if (!file_exists($variables_path)) {
     // Debugging
     hubwoo_log("[HubSpot OAuth] Debugging HubSpot Config: " . print_r($hubspot_config, true));
     hubwoo_log("[HubSpot OAuth] Redirecting to: " . $auth_url);
-// Load client credentials
-$variables_path = get_template_directory() . '/hubspot/variables.php';
-if (!file_exists($variables_path)) {
-    error_log("[HubSpot OAuth] ❌ Missing variables.php file.", 3, $log_file);
-    return;
-}
-$hubspot_config = include $variables_path;
-
-/** * Schedule HubSpot token refresh every 30 minutes.
-    if (!wp_next_scheduled('hubspot_token_refresh_event')) {
-        wp_schedule_event(time(), 'thirty_minutes', 'hubspot_token_refresh_event');
+if (!file_exists($variables_path)) {
+    hubwoo_log("[HubSpot OAuth] ❌ Missing variables.php file.", 'error');
+    return;
+}
+    hubwoo_log("[HubSpot OAuth] ❌ No stored token found.", 'error');
+    return false;
+}
+        hubwoo_log("[HubSpot OAuth] ❌ No valid tokens found in database.", 'error');
+        hubwoo_log("[HubSpot OAuth] 🔄 Token is expired or about to expire. Refreshing...", 'error');
+            hubwoo_log("[HubSpot OAuth] ✅ Token successfully refreshed.", 'error');
+            hubwoo_log("[HubSpot OAuth] ❌ Failed to refresh access token.", 'error');
+    hubwoo_log("[HubSpot OAuth] ✅ Access token is still valid.", 'error');
+        hubwoo_log("[HubSpot OAuth] ❌ Missing HubSpot Client ID or Secret in configuration.", 'error');
+    hubwoo_log("[HubSpot OAuth] 🔄 Refreshing access token for portal: " . $portal_id, 'error');
+        hubwoo_log("[HubSpot OAuth] ❌ Error refreshing token: " . $response->get_error_message(), 'error');
+        hubwoo_log("[HubSpot OAuth] ❌ Failed to retrieve new access token. API Response: " . print_r($body, true), 'error');
+        hubwoo_log("[HubSpot OAuth] ❌ Failed to update new token in database.", 'error');
+    hubwoo_log("[HubSpot OAuth] ✅ Token successfully refreshed. New expiration time: " . date("Y-m-d H:i:s", $expires_at), 'error');
+    hubwoo_log("[HubSpot OAuth] Debugging HubSpot Config: " . print_r($hubspot_config, true), 'error');
+    hubwoo_log("[HubSpot OAuth] Redirecting to: " . $auth_url, 'error');
     }
 }
 add_action('hubspot_token_refresh_event', 'check_and_refresh_hubspot_token');
