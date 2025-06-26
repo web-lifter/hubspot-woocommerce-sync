@@ -1,21 +1,35 @@
-<?php
-
-if (!defined('ABSPATH')) {
-    exit; // Exit if accessed directly
-}
-        register_setting('hubspot_wc_settings', 'hubspot_connected');
-        register_setting('hubspot_wc_settings', 'hubspot_client_id');
-        register_setting('hubspot_wc_settings', 'hubspot_client_secret');
-        register_setting('hubspot_wc_settings', 'hubspot_pipeline_id');
-class HubSpot_WC_Settings {
-
-    public static function init() {
-        add_action('admin_menu', [__CLASS__, 'register_menu']);
-        add_action('admin_init', [__CLASS__, 'register_settings']);
-        add_action('wp_ajax_hubspot_check_connection', [__CLASS__, 'hubspot_check_connection']);
-        add_action('admin_init', [__CLASS__, 'maybe_refresh_cache_on_save']);
-        add_action('admin_post_hubspot_refresh_pipelines', [__CLASS__, 'handle_refresh_pipelines']);
-    }
+        add_menu_page(
+            __('HubSpot Settings', 'hub-woo-sync'),
+            __('HubSpot', 'hub-woo-sync'),
+            'manage_options',
+            'hubspot-woocommerce-sync',
+            [__CLASS__, 'render_settings_page'],
+            'dashicons-admin-generic',
+            56
+        );
+        <h3><?php echo esc_html__( 'HubSpot Authentication & Setup', 'hub-woo-sync' ); ?></h3>
+        <p><?php echo esc_html__( 'Status:', 'hub-woo-sync' ); ?> <span id="hubspot-connection-status" style="color: red;"><?php echo esc_html__( 'Checking...', 'hub-woo-sync' ); ?></span></p>
+        <div class="wrap">
+            <h1><?php echo esc_html__( 'HubSpot WooCommerce Sync', 'hub-woo-sync' ); ?></h1>
+            <h2 class="nav-tab-wrapper">
+                <a href="?page=hubspot-woocommerce-sync&tab=authentication" class="nav-tab <?php echo self::get_active_tab('authentication'); ?>"><?php echo esc_html__( 'HubSpot Setup', 'hub-woo-sync' ); ?></a>
+                <a href="?page=hubspot-woocommerce-sync&tab=woocommerce" class="nav-tab <?php echo self::get_active_tab('woocommerce'); ?>"><?php echo esc_html__( 'Pipelines', 'hub-woo-sync' ); ?></a>
+            </h2>
+
+        <div id="hubspot-account-info">
+            <p><strong><?php echo esc_html__( 'HubSpot Account Details:', 'hub-woo-sync' ); ?></strong></p>
+            <ul>
+                <li><strong><?php echo esc_html__( 'Portal ID:', 'hub-woo-sync' ); ?></strong> <span id="portal-id"><?php echo esc_html__( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php echo esc_html__( 'Account Type:', 'hub-woo-sync' ); ?></strong> <span id="account-type"><?php echo esc_html__( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php echo esc_html__( 'Time Zone:', 'hub-woo-sync' ); ?></strong> <span id="time-zone"><?php echo esc_html__( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php echo esc_html__( 'Company Currency:', 'hub-woo-sync' ); ?></strong> <span id="company-currency"><?php echo esc_html__( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php echo esc_html__( 'Data Hosting Location:', 'hub-woo-sync' ); ?></strong> <span id="data-hosting"><?php echo esc_html__( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+                <li><strong><?php echo esc_html__( 'Access Token:', 'hub-woo-sync' ); ?></strong> <span id="access-token"><?php echo esc_html__( 'Fetching...', 'hub-woo-sync' ); ?></span></li>
+            </ul>
+        </div>
+        <a href="<?php echo esc_url($auth_url); ?>" class="button-primary" id="hubspot-auth-button">
+            <?php echo esc_html__( 'Connect HubSpot', 'hub-woo-sync' ); ?>
+        </a>
 
     /**
     * Register HubSpot settings page in WordPress Admin
@@ -181,8 +195,9 @@ class HubSpot_WC_Settings {
             }
 
             checkHubSpotConnection();
-            setInterval(checkHubSpotConnection, 5000);
-        });
+            setInterval(checkHubSpotConnection, 5000);        <h3><?php echo esc_html__( 'Hubspot Pipelines', 'hub-woo-sync' ); ?></h3>
+                <th><label for="hubspot_pipeline_sync_enabled"><?php echo esc_html__( 'Enable Pipeline Sync', 'hub-woo-sync' ); ?></label></th>
+                    <span><?php echo esc_html__( 'Enable automatic syncing of WooCommerce orders to HubSpot pipeline stages', 'hub-woo-sync' ); ?></span>
         </script>
         <?php
     }
