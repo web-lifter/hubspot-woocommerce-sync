@@ -22,17 +22,27 @@ function render_hubspot_orders_page_table_only() {
 
     $paged  = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
     $limit  = 200;
-    $offset = ($paged - 1) * $limit;
-
-    $search = isset($_GET['search']) ? sanitize_text_field($_GET['search']) : '';
-    $status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
-
-    $query_args = [
-        'limit'   => $limit,
-        'offset'  => $offset,
-        'orderby' => 'date',
-        'order'   => 'DESC',
-    ];
+    $offset = ($paged - 1) * $limit;    echo '<form method="get" style="margin-bottom:10px;">';
+    echo '<input type="hidden" name="page" value="hubspot-order-management">';
+    echo '<input type="search" name="search" placeholder="' . esc_attr__( 'Customer or Deal ID', 'hub-woo-sync' ) . '" value="' . esc_attr($search) . '" /> ';
+    $status_options = [
+        '' => __( 'All Statuses', 'hub-woo-sync' ),
+        'pending' => __( 'Pending Payment', 'hub-woo-sync' ),
+        'processing' => __( 'Processing', 'hub-woo-sync' ),
+        'completed' => __( 'Completed', 'hub-woo-sync' ),
+        'failed' => __( 'Failed', 'hub-woo-sync' ),
+    ];
+    echo '<button class="button">' . esc_html__( 'Filter', 'hub-woo-sync' ) . '</button>';
+        <th><?php echo esc_html__( "Order #", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Customer", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Deal ID", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Order Type", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Total", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Status", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Deal Stage", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Quote Status", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Invoice Status", "hub-woo-sync" ); ?></th>
+        <th><?php echo esc_html__( "Sync", "hub-woo-sync" ); ?></th>
 
     if ($status) {
         $query_args['status'] = $status;
@@ -95,12 +105,18 @@ function render_hubspot_orders_page_table_only() {
     echo '<thead><tr>
         <th>Order #</th>
         <th>Customer</th>
-        <th>Deal ID</th>
-        <th>Order Type</th>
-        <th>Total</th>
-        <th>Status</th>
-        <th>Deal Stage</th>
-        <th>Quote Status</th>
+        $(".send-quote").click(function() {
+            const btn = $(this);
+            postAction("send_quote_email", btn.data("order-id"), btn.data("nonce"), btn, "<?php echo esc_js( __( 'Quote sent!', 'hub-woo-sync' ) ); ?>", "<?php echo esc_js( __( 'Send failed', 'hub-woo-sync' ) ); ?>");
+        });
+            if (!confirm("<?php echo esc_js( __( 'Reset quote status for this order?', 'hub-woo-sync' ) ); ?>")) return;
+            postAction("reset_quote_status", btn.data("order-id"), btn.data("nonce"), btn, "<?php echo esc_js( __( 'Quote status reset.', 'hub-woo-sync' ) ); ?>", "<?php echo esc_js( __( 'Reset failed', 'hub-woo-sync' ) ); ?>");
+            postAction("send_invoice_email", btn.data("order-id"), btn.data("nonce"), btn, "<?php echo esc_js( __( 'Invoice sent!', 'hub-woo-sync' ) ); ?>", "<?php echo esc_js( __( 'Invoice failed', 'hub-woo-sync' ) ); ?>");
+            postAction("manual_sync_hubspot_order", btn.data("order-id"), btn.data("nonce"), btn, "<?php echo esc_js( __( 'Order synced!', 'hub-woo-sync' ) ); ?>", "<?php echo esc_js( __( 'Sync failed', 'hub-woo-sync' ) ); ?>");
+                btn,
+                "<?php echo esc_js( __( 'Deal created successfully!', 'hub-woo-sync' ) ); ?>",
+                "<?php echo esc_js( __( 'Deal creation failed', 'hub-woo-sync' ) ); ?>"
+            );
         <th>Invoice Status</th>
         <th>Sync</th>
         <th>Actions</th>            postAction("hubwoosync_manual_sync_hubspot_order", btn.data("order-id"), btn.data("nonce"), btn, "Order synced!", "Sync failed");
