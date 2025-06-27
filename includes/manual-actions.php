@@ -123,11 +123,16 @@ function ubwoosync_manual_sync_hubspot_order() {
         }
     }
 
-    if (empty($deal['line_items'])) {
+    $line_item_ids = $deal['line_items'];
+    if (empty($line_item_ids)) {
+        $line_item_ids = hubwoosync_fetch_line_item_ids_fallback($deal_id);
+    }
+
+    if (empty($line_item_ids)) {
         hubwoo_log("[HubSpot] No line items returned for deal {$deal_id}", 'warning');
         $order->add_order_note("❌ No line items imported from HubSpot deal {$deal_id}");
     } else {
-        foreach ($deal['line_items'] as $item_id) {
+        foreach ($line_item_ids as $item_id) {
             $line_item = fetch_hubspot_line_item($item_id);
             if (!$line_item) continue;
 
