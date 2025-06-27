@@ -2,6 +2,18 @@
 
 class HubSpot_WC_Settings {
 
+    /**
+     * Initialize hooks for settings and admin pages.
+     */
+    public static function init() {
+        add_action('admin_menu', [__CLASS__, 'register_menu']);
+        add_action('admin_init', [__CLASS__, 'register_settings']);
+        add_action('admin_init', [__CLASS__, 'maybe_refresh_cache_on_save']);
+
+        add_action('wp_ajax_hubspot_check_connection', [__CLASS__, 'hubspot_check_connection']);
+        add_action('woocommerce_order_status_changed', [__CLASS__, 'handle_order_status_change'], 10, 3);
+    }
+
     public static function register_settings() {
         register_setting('hubspot_wc_settings', 'hubspot_client_id');
         register_setting('hubspot_wc_settings', 'hubspot_client_secret');
@@ -17,6 +29,48 @@ class HubSpot_WC_Settings {
         register_setting('hubspot_wc_settings', 'hubspot_stage_quote_accepted_online');
         register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_manual');
         register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_online');
+    }
+
+    /**
+     * Register admin menu pages for the plugin.
+     */
+    public static function register_menu() {
+        add_menu_page(
+            __('HubSpot Settings', 'hubspot-woocommerce-sync'),
+            __('HubSpot', 'hubspot-woocommerce-sync'),
+            'manage_options',
+            'hubspot-woocommerce-sync',
+            [__CLASS__, 'render_settings_page'],
+            'dashicons-admin-generic',
+            56
+        );
+
+        add_submenu_page(
+            'hubspot-woocommerce-sync',
+            __('Settings', 'hubspot-woocommerce-sync'),
+            __('Settings', 'hubspot-woocommerce-sync'),
+            'manage_options',
+            'hubspot-woocommerce-sync',
+            [__CLASS__, 'render_settings_page']
+        );
+
+        add_submenu_page(
+            'hubspot-woocommerce-sync',
+            __('Order Management', 'hubspot-woocommerce-sync'),
+            __('Order Management', 'hubspot-woocommerce-sync'),
+            'manage_woocommerce',
+            'hubspot-order-management',
+            [__CLASS__, 'render_order_management_page']
+        );
+    }
+
+    /**
+     * Wrapper to render the order management page.
+     */
+    public static function render_order_management_page() {
+        if (function_exists('render_hubspot_orders_page_table_only')) {
+            render_hubspot_orders_page_table_only();
+        }
     }
 
     public static function render_settings_page() {
@@ -202,4 +256,3 @@ class HubSpot_WC_Settings {
     }
 }
 
-HubSpot_WC_Settings::init();

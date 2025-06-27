@@ -74,7 +74,6 @@ require_once HUBSPOT_WC_SYNC_PATH . 'includes/utils.php';
 require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-auth.php';
 require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-pipelines.php';
 require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-functions.php';
-require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-init.php';
 require_once HUBSPOT_WC_SYNC_PATH . 'includes/hubspot-settings.php';
 require_once HUBSPOT_WC_SYNC_PATH . 'includes/manual-actions.php';
 require_once HUBSPOT_WC_SYNC_PATH . 'includes/manual-order-sync.php';
