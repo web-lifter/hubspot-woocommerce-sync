@@ -12,9 +12,9 @@ if [ ! -f "$PLUGIN_FILE" ]; then
 fi
 
 # Ensure the plugin's declared slug matches the packaging slug
-DECLARED_SLUG=$(grep -E "^[[:space:]]*define\(\s*'WXL_PLUGIN_SLUG'" "$PLUGIN_FILE" | sed -E "s/.*'([^']+)'.*/\1/")
+DECLARED_SLUG=$(grep -E "^[[:space:]]*define\(\s*'HWS_PLUGIN_SLUG'" "$PLUGIN_FILE" | sed -E "s/.*'([^']+)'.*/\1/")
 if [ "$DECLARED_SLUG" != "$SLUG" ]; then
-  echo "ERROR: WXL_PLUGIN_SLUG in $PLUGIN_FILE is '$DECLARED_SLUG' but expected '$SLUG'" >&2
+  echo "ERROR: HWS_PLUGIN_SLUG in $PLUGIN_FILE is '$DECLARED_SLUG' but expected '$SLUG'" >&2
   exit 1
 fi
 
