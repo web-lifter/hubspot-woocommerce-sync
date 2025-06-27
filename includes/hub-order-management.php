@@ -7,6 +7,7 @@ function render_hubspot_orders_page_table_only() {
         'invoice'      => wp_create_nonce('send_invoice_email_nonce'),
         'sync'         => wp_create_nonce('manual_sync_hubspot_order_nonce'),
         'create_deal'  => wp_create_nonce('create_hubspot_deal_nonce'),
+        'search'       => wp_create_nonce('hubwoo_search_orders_nonce'),
     ];
 
     $search = isset($_GET['search']) ? sanitize_text_field($_GET['search']) : '';
@@ -53,6 +54,20 @@ function render_hubspot_orders_page_table_only() {
 
     echo '<div class="wrap"><h1>HubSpot Orders</h1>';
     echo '<style>.completed-row { background-color: #d4ffd8; }</style>';
+
+    // Import Order Form
+    echo '<form id="hubwoo-import-form" style="margin-bottom:10px;">';
+    echo wp_nonce_field('import_hubspot_order_nonce', 'security', true, false);
+    echo '<input type="hidden" name="action" value="import_hubspot_order" />';
+    echo '<input type="text" name="deal_id" placeholder="' . esc_attr__('HubSpot Deal ID', 'hub-woo-sync') . '" required /> ';
+    echo '<input type="submit" class="button button-primary" value="' . esc_attr__('Import Order', 'hub-woo-sync') . '" />';
+    echo '</form>';
+
+    // Search Form (AJAX)
+    echo '<div style="margin-bottom:10px;">';
+    echo '<input type="text" id="hubwoo-search-term" placeholder="' . esc_attr__('Deal ID or Order #', 'hub-woo-sync') . '" /> ';
+    echo '<button class="button" id="hubwoo-search-btn">' . esc_html__('Search', 'hub-woo-sync') . '</button>';
+    echo '</div>';
 
     // Filter Form
     echo '<form method="get" style="margin-bottom:10px;">';
@@ -208,6 +223,33 @@ function render_hubspot_orders_page_table_only() {
             $(".create-deal").click(function() {
                 postAction("create_hubspot_deal_manual", $(this).data("order-id"), $(this).data("nonce"), $(this), "Deal created successfully!", "Deal creation failed");
             });
+
+            var searchNonce = "' . esc_js($nonces['search']) . '";
+
+            $("#hubwoo-import-form").on("submit", function(e){
+                e.preventDefault();
+                var form = $(this);
+                $.post(ajaxurl, form.serialize(), function(response){
+                    if(response.success){
+                        alert(response.data.message || "Success");
+                        window.location.href = response.data.redirect_url;
+                    } else {
+                        alert("Error: " + (response.data?.message || "Unknown error"));
+                    }
+                });
+            });
+
+            $("#hubwoo-search-btn").on("click", function(e){
+                e.preventDefault();
+                var term = $("#hubwoo-search-term").val();
+                $.post(ajaxurl, {action: "hubwoo_search_orders", term: term, security: searchNonce}, function(response){
+                    if(response.success){
+                        $("table.wp-list-table tbody").html(response.data.html);
+                    } else {
+                        alert("Error: " + response.data);
+                    }
+                });
+            });
         });
     </script>';
 }
@@ -233,4 +275,81 @@ function get_hubspot_pipeline_and_stage_labels() {
     }
 
     return ['pipelines' => $pipeline_labels, 'stages' => $stage_labels];
+}
+
+// AJAX search for orders by deal ID or order number
+add_action('wp_ajax_hubwoo_search_orders', 'hubwoo_search_orders');
+function hubwoo_search_orders() {
+    if (!current_user_can('manage_woocommerce')) {
+        wp_send_json_error('Unauthorized', 403);
+    }
+
+    check_ajax_referer('hubwoo_search_orders_nonce', 'security');
+
+    $term = sanitize_text_field($_POST['term'] ?? '');
+    if ($term === '') {
+        wp_send_json_error('Empty search term');
+    }
+
+    $query = [
+        'limit'  => -1,
+        'orderby'=> 'date',
+        'order'  => 'DESC',
+    ];
+
+    if (is_numeric($term)) {
+        $order = wc_get_order((int)$term);
+        if ($order) {
+            $orders = [$order];
+        } else {
+            $query['meta_query'] = [
+                [
+                    'key'   => 'hubspot_deal_id',
+                    'value' => $term,
+                ]
+            ];
+            $orders = wc_get_orders($query);
+        }
+    } else {
+        $query['meta_query'] = [
+            [
+                'key'   => 'hubspot_deal_id',
+                'value' => $term,
+                'compare' => 'LIKE',
+            ]
+        ];
+        $orders = wc_get_orders($query);
+    }
+
+    ob_start();
+    $labels = get_hubspot_pipeline_and_stage_labels();
+    foreach ($orders as $order) {
+        $order_id = $order->get_id();
+        $deal_id  = $order->get_meta('hubspot_deal_id') ?: '—';
+        $pipeline_id = $order->get_meta('hubspot_pipeline_id') ?: '—';
+        $stage_id  = $order->get_meta('hubspot_dealstage_id') ?: '—';
+        $pipeline_label = $order->get_meta('hubspot_pipeline') ?: ($labels['pipelines'][$pipeline_id] ?? $pipeline_id);
+        $stage_label    = $order->get_meta('hubspot_dealstage') ?: ($labels['stages'][$stage_id] ?? $stage_id);
+        $quote_status   = $order->get_meta('quote_status') ?: 'Quote Not Sent';
+        $invoice_status = $order->get_meta('invoice_status') ?: 'Not Sent';
+        $send_quote_label = ($quote_status === 'Quote Sent' || $quote_status === 'Quote Not Accepted') ? 'Resend Quote' : 'Send Quote';
+        $order_type   = $order->get_meta('order_type') ?: '—';
+        $order_status = wc_get_order_status_name($order->get_status());
+        $total        = $order->get_formatted_order_total();
+        $name         = $order->get_formatted_billing_full_name();
+        echo '<tr>';
+        echo '<td><a href="' . esc_url(get_edit_post_link($order_id)) . '">#' . esc_html($order_id) . '</a></td>';
+        echo '<td>' . esc_html($name) . '</td>';
+        echo '<td>' . esc_html($deal_id) . '</td>';
+        echo '<td>' . esc_html(ucfirst($order_type)) . '</td>';
+        echo '<td>' . $total . '</td>';
+        echo '<td>' . esc_html($order_status) . '</td>';
+        echo '<td>' . esc_html($stage_label) . '</td>';
+        echo '<td>' . esc_html($quote_status) . '</td>';
+        echo '<td>' . esc_html($invoice_status) . '</td>';
+        echo '<td></td><td></td>';
+        echo '</tr>';
+    }
+    $html = ob_get_clean();
+    wp_send_json_success(['html' => $html]);
 }

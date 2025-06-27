@@ -2,55 +2,6 @@
 if (!defined('ABSPATH')) exit;
 
 /**
- * Register Import submenu
- */
-function hubwoo_register_import_page() {
-    add_submenu_page(
-        'hubspot-woocommerce-sync',
-        __('Import HubSpot Order', 'hubspot-woocommerce-sync'),
-        __('Import Order', 'hubspot-woocommerce-sync'),
-        'manage_woocommerce',
-        'hubspot-import-order',
-        'hubwoo_render_import_page'
-    );
-}
-add_action('admin_menu', 'hubwoo_register_import_page');
-
-/**
- * Render Import UI
- */
-function hubwoo_render_import_page() {
-    ?>
-    <div class="wrap">
-        <h1><?php esc_html_e('HubSpot Order Management', 'hubspot-woocommerce-sync'); ?></h1>
-        <h2><?php esc_html_e('Import Order from HubSpot', 'hubspot-woocommerce-sync'); ?></h2>
-        <form id="hubspot-import-form">
-            <?php wp_nonce_field('import_hubspot_order_nonce', 'security'); ?>
-            <input type="hidden" name="action" value="import_hubspot_order" />
-            <input type="text" name="deal_id" placeholder="<?php esc_attr_e('HubSpot Deal ID', 'hubspot-woocommerce-sync'); ?>" required />
-            <input type="submit" class="button button-primary" value="<?php esc_attr_e('Import Order', 'hubspot-woocommerce-sync'); ?>" />
-        </form>
-        <hr>
-    </div>
-    <script>
-    jQuery(function($){
-        $('#hubspot-import-form').on('submit', function(e){
-            e.preventDefault();
-            $.post(ajaxurl, $(this).serialize(), function(response){
-                if (response.success) {
-                    alert(response.data.message || 'Success');
-                    window.location.href = response.data.redirect_url;
-                } else {
-                    alert('Error: ' + (response.data?.message || 'Unknown error'));
-                }
-            });
-        });
-    });
-    </script>
-    <?php
-}
-
-/**
  * AJAX: Import HubSpot Deal into Woo Order
  */
 add_action('wp_ajax_import_hubspot_order', 'hubwoo_ajax_import_order');
