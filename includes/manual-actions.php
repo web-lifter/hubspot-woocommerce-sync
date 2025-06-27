@@ -14,6 +14,10 @@ add_action('wp_ajax_hubwoosync_send_invoice_email', 'hubwoosync_send_invoice_ema
 function ubwoosync_send_invoice_email() {
     check_ajax_referer('send_invoice_email_nonce', 'security');
 
+    if (! current_user_can('manage_woocommerce')) {
+        wp_send_json_error('Unauthorized', 403);
+    }
+
     $order_id = absint($_POST['order_id']);
     $order = wc_get_order($order_id);
     if (!$order) wp_send_json_error('Invalid Order ID.');
@@ -37,12 +41,9 @@ function ubwoosync_send_invoice_email() {
     // Update HubSpot stage first
     if ($invoice_stage_id) {
         update_hubspot_deal_stage($order_id, $invoice_stage_id);
-        log_email_in_hubspot($order_id, 'invoice', $invoice_stage_id);
-    } else {
-        log_email_in_hubspot($order_id, 'invoice');
     }
 
-    log_email_activity($order_id, 'invoice', $email, 'Success');
+    log_email_in_hubspot($order_id, 'invoice');
 
     wp_send_json_success('Invoice sent successfully.');
 }
