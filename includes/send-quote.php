@@ -2,8 +2,6 @@
 
 if (!defined('ABSPATH')) exit;
 
-// Sets content type to HTML for wp_mail
-add_filter('wp_mail_content_type', fn() => 'text/html');
 
 /**
  * Sends invoice email and updates HubSpot stage.
@@ -36,7 +34,11 @@ function send_invoice($order_id) {
         'X-Priority: 3 (Normal)'
     ];
 
+    // Set mail content type to HTML just for this email
+    $html_callback = fn() => 'text/html';
+    add_filter('wp_mail_content_type', $html_callback);
     wp_mail($email, $subject, $message, $headers);
+    remove_filter('wp_mail_content_type', $html_callback);
 
     $order->update_meta_data('invoice_last_sent', current_time('mysql', true));
     $order->update_meta_data('invoice_status', 'Invoice Sent');
