@@ -143,9 +143,85 @@ class HubSpot_WC_Settings {
     }
 
     private static function render_woocommerce_settings() {
+        $pipelines        = get_option('hubspot_cached_pipelines', []);
+        $online_pipeline  = get_option('hubspot_pipeline_online');
+        $manual_pipeline  = get_option('hubspot_pipeline_manual');
+        $sync_enabled     = get_option('hubspot_pipeline_sync_enabled');
+        $status_mapping   = get_option('hubspot_status_stage_mapping', []);
+
+        $online_stages = $pipelines[$online_pipeline]['stages'] ?? [];
+        $manual_stages = $pipelines[$manual_pipeline]['stages'] ?? [];
+
         echo '<h3>' . esc_html__('HubSpot Pipelines Settings', 'hub-woo-sync') . '</h3>';
-        echo '<p>' . esc_html__('Pipelines and stage mapping settings will appear here.', 'hub-woo-sync') . '</p>';
-        // TODO: implement real rendering logic if needed
+
+        echo '<table class="form-table"><tbody>';
+        echo '<tr><th scope="row"><label for="hubspot_pipeline_online">' . esc_html__('Online Orders Pipeline', 'hub-woo-sync') . '</label></th>';
+        echo '<td><select id="hubspot_pipeline_online" name="hubspot_pipeline_online">';
+        echo '<option value="">' . esc_html__('Select Pipeline', 'hub-woo-sync') . '</option>';
+        foreach ($pipelines as $pid => $pipeline) {
+            echo '<option value="' . esc_attr($pid) . '"' . selected($online_pipeline, $pid, false) . '>' . esc_html($pipeline['label']) . '</option>';
+        }
+        echo '</select></td></tr>';
+
+        echo '<tr><th scope="row"><label for="hubspot_pipeline_manual">' . esc_html__('Manual Orders Pipeline', 'hub-woo-sync') . '</label></th>';
+        echo '<td><select id="hubspot_pipeline_manual" name="hubspot_pipeline_manual">';
+        echo '<option value="">' . esc_html__('Select Pipeline', 'hub-woo-sync') . '</option>';
+        foreach ($pipelines as $pid => $pipeline) {
+            echo '<option value="' . esc_attr($pid) . '"' . selected($manual_pipeline, $pid, false) . '>' . esc_html($pipeline['label']) . '</option>';
+        }
+        echo '</select></td></tr>';
+
+        echo '<tr><th scope="row">' . esc_html__('Sync Order Status Changes', 'hub-woo-sync') . '</th>';
+        echo '<td><label><input type="checkbox" name="hubspot_pipeline_sync_enabled" value="1"' . checked(1, $sync_enabled, false) . ' /> ' . esc_html__('Update HubSpot deal stage when order status changes', 'hub-woo-sync') . '</label></td></tr>';
+        echo '</tbody></table>';
+
+        echo '<h4>' . esc_html__('WooCommerce Status → HubSpot Stage Mapping', 'hub-woo-sync') . '</h4>';
+        $statuses = wc_get_order_statuses();
+        echo '<table class="widefat striped"><thead><tr><th>' . esc_html__('Status', 'hub-woo-sync') . '</th><th>' . esc_html__('Online Stage', 'hub-woo-sync') . '</th><th>' . esc_html__('Manual Stage', 'hub-woo-sync') . '</th></tr></thead><tbody>';
+        foreach ($statuses as $slug => $label) {
+            $status = substr($slug, 3); // remove wc-
+            $online_key = 'online_wc-' . $status;
+            $manual_key = 'manual_wc-' . $status;
+            $online_val = $status_mapping[$online_key] ?? '';
+            $manual_val = $status_mapping[$manual_key] ?? '';
+            echo '<tr><td>' . esc_html($label) . '</td>';
+            echo '<td><select name="hubspot_status_stage_mapping[' . esc_attr($online_key) . ']">';
+            echo '<option value="">' . esc_html__('Select Stage', 'hub-woo-sync') . '</option>';
+            foreach ($online_stages as $sid => $slabel) {
+                echo '<option value="' . esc_attr($sid) . '"' . selected($online_val, $sid, false) . '>' . esc_html($slabel) . '</option>';
+            }
+            echo '</select></td>';
+            echo '<td><select name="hubspot_status_stage_mapping[' . esc_attr($manual_key) . ']">';
+            echo '<option value="">' . esc_html__('Select Stage', 'hub-woo-sync') . '</option>';
+            foreach ($manual_stages as $sid => $slabel) {
+                echo '<option value="' . esc_attr($sid) . '"' . selected($manual_val, $sid, false) . '>' . esc_html($slabel) . '</option>';
+            }
+            echo '</select></td></tr>';
+        }
+        echo '</tbody></table>';
+
+        echo '<h4>' . esc_html__('Workflow Stage Mapping', 'hub-woo-sync') . '</h4>';
+        $workflow_fields = [
+            'hubspot_stage_quote_sent_online'     => [$online_stages, __('Quote Sent Stage (Online)', 'hub-woo-sync')],
+            'hubspot_stage_quote_sent_manual'     => [$manual_stages, __('Quote Sent Stage (Manual)', 'hub-woo-sync')],
+            'hubspot_stage_quote_accepted_online' => [$online_stages, __('Quote Accepted Stage (Online)', 'hub-woo-sync')],
+            'hubspot_stage_quote_accepted_manual' => [$manual_stages, __('Quote Accepted Stage (Manual)', 'hub-woo-sync')],
+            'hubspot_stage_invoice_sent_online'   => [$online_stages, __('Invoice Sent Stage (Online)', 'hub-woo-sync')],
+            'hubspot_stage_invoice_sent_manual'   => [$manual_stages, __('Invoice Sent Stage (Manual)', 'hub-woo-sync')],
+        ];
+
+        echo '<table class="form-table"><tbody>';
+        foreach ($workflow_fields as $option => $data) {
+            list($stage_list, $label) = $data;
+            $current = get_option($option);
+            echo '<tr><th scope="row"><label for="' . esc_attr($option) . '">' . esc_html($label) . '</label></th><td><select id="' . esc_attr($option) . '" name="' . esc_attr($option) . '">';
+            echo '<option value="">' . esc_html__('Select Stage', 'hub-woo-sync') . '</option>';
+            foreach ($stage_list as $sid => $slabel) {
+                echo '<option value="' . esc_attr($sid) . '"' . selected($current, $sid, false) . '>' . esc_html($slabel) . '</option>';
+            }
+            echo '</select></td></tr>';
+        }
+        echo '</tbody></table>';
     }
 
     public static function get_active_tab($tab) {
