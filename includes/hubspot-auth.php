@@ -186,6 +186,15 @@ function manage_hubspot_access_token() {
 function steelmark_start_hubspot_auth(WP_REST_Request $request) {
     global $hubspot_config;
 
+    $nonce = $request->get_header('X-WP-Nonce');
+    if (!$nonce) {
+        $nonce = $request->get_param('_wpnonce');
+    }
+
+    if (!$nonce || !wp_verify_nonce($nonce, 'wp_rest')) {
+        return new WP_REST_Response(['error' => 'Invalid nonce'], 403);
+    }
+
     error_log("[HubSpot OAuth] Debugging HubSpot Config: " . print_r($hubspot_config, true));
 
     if (empty($hubspot_config['client_id']) || empty($hubspot_config['redirect_uri']) || empty($hubspot_config['scopes'])) {
