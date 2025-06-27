@@ -2,28 +2,6 @@
 
 class HubSpot_WC_Settings {
 
-    public static function init() {
-        add_action('admin_menu', [__CLASS__, 'register_menu']);
-        add_action('admin_init', [__CLASS__, 'register_settings']);
-        add_action('admin_init', [__CLASS__, 'maybe_refresh_cache_on_save']);
-        add_action('wp_ajax_hubspot_check_connection', [__CLASS__, 'hubspot_check_connection']);
-
-        // Hook to auto-sync pipeline stage on status change
-        add_action('woocommerce_order_status_changed', [__CLASS__, 'handle_order_status_change'], 10, 3);
-    }
-
-    public static function register_menu() {
-        add_menu_page(
-            __('HubSpot Settings', 'hub-woo-sync'),
-            __('HubSpot', 'hub-woo-sync'),
-            'manage_options',
-            'hubspot-woocommerce-sync',
-            [__CLASS__, 'render_settings_page'],
-            'dashicons-admin-generic',
-            56
-        );
-    }
-
     public static function register_settings() {
         register_setting('hubspot_wc_settings', 'hubspot_client_id');
         register_setting('hubspot_wc_settings', 'hubspot_client_secret');

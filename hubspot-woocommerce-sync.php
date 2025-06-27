@@ -26,8 +26,8 @@ if (!defined('HUBSPOT_WC_SYNC_PATH')) {
 }
 
 // Define plugin slug
-if (!defined('WXL_PLUGIN_SLUG')) {
-    define('WXL_PLUGIN_SLUG', 'hubspot-woocommerce-sync');
+if (!defined('HWS_PLUGIN_SLUG')) {
+    define('HWS_PLUGIN_SLUG', 'hubspot-woocommerce-sync');
 }
 
 // Load plugin translations

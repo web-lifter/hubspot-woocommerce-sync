@@ -1,62 +1,72 @@
 <?php
-add_action('admin_menu', function () {
-    // Order Management Page
-    add_submenu_page(
-        'hubspot-woocommerce-sync',
-        __('Order Management', 'hubspot-woocommerce-sync'),
-        __('Order Management', 'hubspot-woocommerce-sync'),
-        'manage_woocommerce',
-        'hubspot-order-management',
-        'render_combined_order_management_page'
-    );
 
-    // Abandoned Carts Page
-    add_submenu_page(
-        'hubspot-woocommerce-sync',
-        __('Abandoned Carts', 'hubspot-woocommerce-sync'),
-        __('Abandoned Carts', 'hubspot-woocommerce-sync'),
-        'manage_woocommerce',
-        'hubspot-abandoned-carts',
-        'render_abandoned_cart_admin_view'
-    );
+class HubSpot_WooCommerce_Sync {
 
-    // Abandoned Cart Emails Page
-    add_submenu_page(
-        'hubspot-woocommerce-sync',
-        __('Abandoned Cart Emails', 'hubspot-woocommerce-sync'),
-        __('Abandoned Cart Emails', 'hubspot-woocommerce-sync'),
-        'manage_woocommerce',
-        'hubspot-abandoned-cart-emails',
-        'render_abandoned_cart_emails_page'
-    );
+    public static function init() {
+        // Register menu items
+        add_action('admin_menu', [__CLASS__, 'register_menu']);
 
-    // Email Templates Page
-    add_submenu_page(
-        'hubspot-woocommerce-sync',
-        __('Email Templates', 'hubspot-woocommerce-sync'),
-        __('Email Templates', 'hubspot-woocommerce-sync'),
-        'manage_woocommerce',
-        'hubspot-email-templates',
-        'render_hubspot_email_templates_page'
-    );
+        // Register settings
+        add_action('admin_init', [__CLASS__, 'register_settings']);
+        add_action('admin_init', [__CLASS__, 'maybe_refresh_cache_on_save']);
 
-    // Email Sequences Page
-    add_submenu_page(
-        'hubspot-woocommerce-sync',
-        __('Email Sequences', 'hubspot-woocommerce-sync'),
-        __('Email Sequences', 'hubspot-woocommerce-sync'),
-        'manage_woocommerce',
-        'hubspot-email-sequences',
-        'render_abandoned_sequence_builder_page'
-    );
+        // AJAX hook for HubSpot connection check
+        add_action('wp_ajax_hubspot_check_connection', [__CLASS__, 'hubspot_check_connection']);
 
-    // Email Previews Page
-    add_submenu_page(
-        'hubspot-woocommerce-sync',
-        __('Email Previews', 'hubspot-woocommerce-sync'),
-        __('Email Previews', 'hubspot-woocommerce-sync'),
-        'manage_woocommerce',
-        'hubspot-email-preview',
-        'render_email_template_preview_page'
-    );
-});
+        // WooCommerce hook for status change
+        add_action('woocommerce_order_status_changed', [__CLASS__, 'handle_order_status_change'], 10, 3);
+    }
+
+    public static function register_settings() {
+        register_setting('hubspot_wc_settings', 'hubspot_client_id');
+        register_setting('hubspot_wc_settings', 'hubspot_client_secret');
+        register_setting('hubspot_wc_settings', 'hubspot_connected');
+        register_setting('hubspot_wc_settings', 'hubspot_auto_create_deal');
+        register_setting('hubspot_wc_settings', 'hubspot_pipeline_online');
+        register_setting('hubspot_wc_settings', 'hubspot_pipeline_manual');
+        register_setting('hubspot_wc_settings', 'hubspot_pipeline_sync_enabled');
+        register_setting('hubspot_wc_settings', 'hubspot_status_stage_mapping');
+        register_setting('hubspot_wc_settings', 'hubspot_stage_quote_sent_manual');
+        register_setting('hubspot_wc_settings', 'hubspot_stage_quote_sent_online');
+        register_setting('hubspot_wc_settings', 'hubspot_stage_quote_accepted_manual');
+        register_setting('hubspot_wc_settings', 'hubspot_stage_quote_accepted_online');
+        register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_manual');
+        register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_online');
+    }
+
+    public static function register_menu() {
+        // Main HubSpot menu with Settings as default page
+        add_menu_page(
+            __('HubSpot Settings', 'hubspot-woocommerce-sync'),
+            __('HubSpot', 'hubspot-woocommerce-sync'),
+            'manage_options',
+            'hubspot-woocommerce-sync',
+            [__CLASS__, 'render_settings_page'],
+            'dashicons-admin-generic',
+            56
+        );
+
+        // Submenu: Settings
+        add_submenu_page(
+            'hubspot-woocommerce-sync',
+            __('Settings', 'hubspot-woocommerce-sync'),
+            __('Settings', 'hubspot-woocommerce-sync'),
+            'manage_options',
+            'hubspot-woocommerce-sync',
+            [__CLASS__, 'render_settings_page']
+        );
+
+        // Submenu: Order Management
+        add_submenu_page(
+            'hubspot-woocommerce-sync',
+            __('Order Management', 'hubspot-woocommerce-sync'),
+            __('Order Management', 'hubspot-woocommerce-sync'),
+            'manage_woocommerce',
+            'hubspot-order-management',
+            [__CLASS__, 'render_order_management_page']
+        );
+    }
+}
+
+// Initialize the plugin
+HubSpot_WooCommerce_Sync::init();
