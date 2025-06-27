@@ -16,7 +16,6 @@ function steelmark_hubspot_permission() {
             [ 'status' => 401 ]
         );
     }
-
     if ( ! current_user_can( 'manage_options' ) ) {
         return new WP_Error(
             'rest_insufficient_permissions',
@@ -24,9 +23,9 @@ function steelmark_hubspot_permission() {
             [ 'status' => 403 ]
         );
     }
-
     return true;
 }
+
 
 /**
  * Register REST API routes for HubSpot OAuth.
