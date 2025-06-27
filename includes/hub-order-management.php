@@ -337,7 +337,8 @@ function hubwoo_search_orders() {
         $order_status = wc_get_order_status_name($order->get_status());
         $total        = $order->get_formatted_order_total();
         $name         = $order->get_formatted_billing_full_name();
-        echo '<tr>';
+        $row_class    = ($order->get_status() === 'completed') ? 'completed-row' : '';
+        echo '<tr class="' . esc_attr($row_class) . '">';
         echo '<td><a href="' . esc_url(get_edit_post_link($order_id)) . '">#' . esc_html($order_id) . '</a></td>';
         echo '<td>' . esc_html($name) . '</td>';
         echo '<td>' . esc_html($deal_id) . '</td>';
