@@ -56,7 +56,7 @@ function fetch_hubspot_deal($id)
         // Associations
         'contacts'   => array_column($body['associations']['contacts']['results'] ?? [], 'id'),
         'companies'  => array_column($body['associations']['companies']['results'] ?? [], 'id'),
-        'line_items' => array_column($body['associations']['line items']['results'] ?? [], 'id'),
+        'line_items' => array_column($body['associations']['line_items']['results'] ?? [], 'id'),
 
         // Billing
         'address_line_1' => $props['address_line_1'] ?? '',
