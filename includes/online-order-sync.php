@@ -151,7 +151,8 @@ function hubwoosync_create_line_item($name, $price, $quantity, $sku, $gst, $acce
             'name'     => $name,
             'price'    => round($price, 2),
             'quantity' => $quantity,
-            'sku'      => $sku,
+            // Store WooCommerce SKU in the custom hs_sku property
+            'hs_sku'   => $sku,
             'gst'      => $gst,
         ],
     ];

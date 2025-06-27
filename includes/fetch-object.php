@@ -131,7 +131,7 @@ function fetch_hubspot_company($id)
 function fetch_hubspot_line_item($id)
 {
     $token = manage_hubspot_access_token();
-    $url = "https://api.hubapi.com/crm/v3/objects/line_items/{$id}?properties=name,price,quantity,hs_sku";
+    $url = "https://api.hubapi.com/crm/v3/objects/line_items/{$id}?properties=name,price,quantity,hs_sku,sku";
 
     $res = wp_remote_get($url, [
         'headers' => ['Authorization' => "Bearer $token"]
@@ -144,12 +144,14 @@ function fetch_hubspot_line_item($id)
 
     $body = json_decode(wp_remote_retrieve_body($res), true);
     $props = $body['properties'] ?? [];
+    // Legacy line items may use the 'sku' property, so fall back if hs_sku is missing
+    $sku   = $props['hs_sku'] ?? $props['sku'] ?? 'TEMP-' . rand(1000, 9999);
 
     return [
         'id'       => $id,
         'name'     => $props['name'] ?? 'Unnamed',
         'price'    => floatval($props['price'] ?? 0),
         'quantity' => intval($props['quantity'] ?? 1),
-        'sku'      => $props['hs_sku'] ?? 'TEMP-' . rand(1000, 9999),
+        'sku'      => $sku,
     ];
 }
