@@ -123,9 +123,13 @@ function ubwoosync_manual_sync_hubspot_order() {
         }
     }
 
-    foreach ($deal['line_items'] as $item_id) {
-        $line_item = fetch_hubspot_line_item($item_id);
-        if (!$line_item) continue;
+    if (empty($deal['line_items'])) {
+        hubwoo_log("[HubSpot] No line items returned for deal {$deal_id}", 'warning');
+        $order->add_order_note("❌ No line items imported from HubSpot deal {$deal_id}");
+    } else {
+        foreach ($deal['line_items'] as $item_id) {
+            $line_item = fetch_hubspot_line_item($item_id);
+            if (!$line_item) continue;
 
         $product_id = wc_get_product_id_by_sku($line_item['sku']);
         $item = new WC_Order_Item_Product();
@@ -138,6 +142,7 @@ function ubwoosync_manual_sync_hubspot_order() {
         $item->add_meta_data('Cost', $line_item['price']);
         $item->add_meta_data('SKU', $line_item['sku']);
         $order->add_item($item);
+        }
     }
 
     if (!empty($deal['shipping'])) {
