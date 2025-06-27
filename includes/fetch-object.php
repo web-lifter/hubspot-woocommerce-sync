@@ -155,3 +155,39 @@ function fetch_hubspot_line_item($id)
         'sku'      => $sku,
     ];
 }
+
+/**
+ * Fallback: fetch line item IDs for a deal via v4 associations.
+ *
+ * @param int $deal_id
+ * @return array
+ */
+function hubwoosync_fetch_line_item_ids_fallback($deal_id)
+{
+    $token = manage_hubspot_access_token();
+    $url   = "https://api.hubapi.com/crm/v4/objects/deals/{$deal_id}/associations/line_items";
+
+    $res = wp_remote_get($url, [
+        'headers' => ['Authorization' => "Bearer $token"]
+    ]);
+
+    if (is_wp_error($res)) {
+        hubwoo_log("[HubSpot] Failed to fetch line item associations for deal {$deal_id}: " . $res->get_error_message(), 'error');
+        return [];
+    }
+
+    $body = json_decode(wp_remote_retrieve_body($res), true);
+    $ids  = [];
+
+    if (!empty($body['results'])) {
+        foreach ($body['results'] as $result) {
+            if (isset($result['id'])) {
+                $ids[] = $result['id'];
+            } elseif (isset($result['toObjectId'])) {
+                $ids[] = $result['toObjectId'];
+            }
+        }
+    }
+
+    return $ids;
+}
