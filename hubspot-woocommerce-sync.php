@@ -25,6 +25,11 @@ if ( ! defined( 'HUBSPOT_WC_SYNC_PATH' ) ) {
     define( 'HUBSPOT_WC_SYNC_URL', plugin_dir_url( __FILE__ ) );
 }
 
+// Declare the plugin slug for packaging scripts.
+if ( ! defined( 'WXL_PLUGIN_SLUG' ) ) {
+    define( 'WXL_PLUGIN_SLUG', 'hubspot-woocommerce-sync' );
+}
+
 // Load translations
 add_action( 'plugins_loaded', function() {
     load_plugin_textdomain( 'hubspot-woocommerce-sync', false, dirname( plugin_basename( __FILE__ ) ) . '/languages' );
