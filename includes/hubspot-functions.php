@@ -111,9 +111,13 @@ function hubwoo_ajax_import_order() {
     $subtotal = 0;
 
     // Line items
-    foreach ($deal['line_items'] as $item_id) {
-        $line_item = fetch_hubspot_line_item($item_id);
-        if (!$line_item) continue;
+    if (empty($deal['line_items'])) {
+        hubwoo_log("[HubSpot] No line items returned for deal {$deal_id}", 'warning');
+        $order->add_order_note("❌ No line items imported from HubSpot deal {$deal_id}");
+    } else {
+        foreach ($deal['line_items'] as $item_id) {
+            $line_item = fetch_hubspot_line_item($item_id);
+            if (!$line_item) continue;
 
         $product_id = wc_get_product_id_by_sku($line_item['sku']);
         $product = $product_id ? wc_get_product($product_id) : false;
@@ -133,6 +137,7 @@ function hubwoo_ajax_import_order() {
         }
 
         $order->add_item($item);
+        }
     }
 
     // Shipping
