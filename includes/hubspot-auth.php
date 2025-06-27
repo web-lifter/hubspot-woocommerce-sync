@@ -3,25 +3,51 @@ use WP_REST_Request;
 use WP_REST_Response;
 
 /**
+ * Permission callback for HubSpot REST routes.
+ * Ensures the user is logged in as an administrator.
+ *
+ * @return true|WP_Error
+ */
+function steelmark_hubspot_permission() {
+    if ( ! is_user_logged_in() ) {
+        return new WP_Error(
+            'rest_not_logged_in',
+            'You must log in to start HubSpot authentication.',
+            [ 'status' => 401 ]
+        );
+    }
+
+    if ( ! current_user_can( 'manage_options' ) ) {
+        return new WP_Error(
+            'rest_insufficient_permissions',
+            'Administrator privileges required.',
+            [ 'status' => 403 ]
+        );
+    }
+
+    return true;
+}
+
+/**
  * Register REST API routes for HubSpot OAuth.
  */
 add_action('rest_api_init', function () {
     register_rest_route('hubspot/v1', '/start-auth', [
         'methods'             => 'GET',
         'callback'            => 'steelmark_start_hubspot_auth',
-        'permission_callback' => fn() => current_user_can('manage_options'),
+        'permission_callback' => 'steelmark_hubspot_permission',
     ]);
 
     register_rest_route('hubspot/v1', '/oauth/callback', [
         'methods'             => 'GET',
         'callback'            => 'steelmark_handle_oauth_callback',
-        'permission_callback' => fn() => current_user_can('manage_options'),
+        'permission_callback' => 'steelmark_hubspot_permission',
     ]);
 
     register_rest_route('hubspot/v1', '/get-token', [
         'methods'             => 'GET',
         'callback'            => 'steelmark_get_stored_token',
-        'permission_callback' => fn() => current_user_can('manage_options'),
+        'permission_callback' => 'steelmark_hubspot_permission',
     ]);
 });
 

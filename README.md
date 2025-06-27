@@ -135,7 +135,7 @@ Your HubSpot app's **Client ID** and **Client Secret** are loaded from the `vari
 
 ## REST API Endpoints
 
-The plugin provides the following API routes. All routes require an authenticated user with the `manage_options` capability:
+The plugin provides the following API routes. All routes require an authenticated user with the `manage_options` capability. In practice, you must be logged in as an administrator when calling `/start-auth` and `/oauth/callback`. The **Connect HubSpot** link on the plugin settings page opens these routes for you so authentication is handled automatically:
 
 ### Start OAuth Authentication
 `GET /wp-json/hubspot/v1/start-auth`
