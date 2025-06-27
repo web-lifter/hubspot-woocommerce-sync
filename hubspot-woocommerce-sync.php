@@ -35,15 +35,18 @@ add_action('plugins_loaded', function () {
     load_plugin_textdomain('hubspot-woocommerce-sync', false, dirname(plugin_basename(__FILE__)) . '/languages');
 });
 
-// Define HubSpot OAuth constants from options
+// Load OAuth credentials from variables.php
+$vars_path = HUBSPOT_WC_SYNC_PATH . 'variables.php';
+$hubspot_vars = file_exists($vars_path) ? include $vars_path : [];
+
 if (!defined('HUBSPOT_CLIENT_ID')) {
-    define('HUBSPOT_CLIENT_ID', get_option('hubspot_client_id', ''));
+    define('HUBSPOT_CLIENT_ID', $hubspot_vars['client_id'] ?? '');
 }
 if (!defined('HUBSPOT_CLIENT_SECRET')) {
-    define('HUBSPOT_CLIENT_SECRET', get_option('hubspot_client_secret', ''));
+    define('HUBSPOT_CLIENT_SECRET', $hubspot_vars['client_secret'] ?? '');
 }
 if (!defined('HUBSPOT_REDIRECT_URI')) {
-    define('HUBSPOT_REDIRECT_URI', site_url('/wp-json/hubspot/v1/oauth/callback'));
+    define('HUBSPOT_REDIRECT_URI', $hubspot_vars['redirect_uri'] ?? site_url('/wp-json/hubspot/v1/oauth/callback'));
 }
 
 // Prepare configuration for global access

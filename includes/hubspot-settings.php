@@ -15,8 +15,6 @@ class HubSpot_WC_Settings {
     }
 
     public static function register_settings() {
-        register_setting('hubspot_wc_settings', 'hubspot_client_id');
-        register_setting('hubspot_wc_settings', 'hubspot_client_secret');
         register_setting('hubspot_wc_settings', 'hubspot_connected');
         register_setting('hubspot_wc_settings', 'hubspot_auto_create_deal');
         register_setting('hubspot_wc_settings', 'hubspot_pipeline_online');
