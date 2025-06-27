@@ -114,9 +114,23 @@ class HubSpot_WC_Settings {
                 <li><strong><?php esc_html_e('Access Token:', 'hub-woo-sync'); ?></strong> <span id="access-token">...</span></li>
             </ul>
         </div>
-        <a href="<?php echo esc_url($auth_url); ?>" class="button-primary" id="hubspot-auth-button"><?php esc_html_e('Connect HubSpot', 'hub-woo-sync'); ?></a>
+        <a href="#" data-auth-url="<?php echo esc_url($auth_url); ?>" data-nonce="<?php echo esc_attr($nonce); ?>" class="button-primary" id="hubspot-auth-button"><?php esc_html_e('Connect HubSpot', 'hub-woo-sync'); ?></a>
         <script>
         jQuery(function($){
+            $('#hubspot-auth-button').on('click', function(e){
+                e.preventDefault();
+                const url = $(this).data('auth-url');
+                const nonce = $(this).data('nonce');
+                fetch(url, {
+                    credentials: 'include',
+                    headers: { 'X-WP-Nonce': nonce }
+                }).then(function(resp){
+                    if (resp.redirected) {
+                        window.location.href = resp.url;
+                    }
+                });
+            });
+
             function checkHubSpotConnection() {
                 $.post(ajaxurl, { action: 'hubspot_check_connection' }, function(response) {
                     if (typeof response === 'string') {
