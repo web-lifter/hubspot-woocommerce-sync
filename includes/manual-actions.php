@@ -28,12 +28,15 @@ function ubwoosync_send_invoice_email() {
     $order->update_meta_data('invoice_status', 'Invoice Sent');
     $order->save();
 
-    $type = order_type($order);
-    $invoice_stage_id = $type === 'manual'
+    // Use correct order type check
+    $is_manual = is_order_manual($order);
+    $invoice_stage_id = $is_manual
         ? get_option('hubspot_stage_invoice_sent_manual')
         : get_option('hubspot_stage_invoice_sent_online');
 
+    // Update HubSpot stage first
     if ($invoice_stage_id) {
+        update_hubspot_deal_stage($order_id, $invoice_stage_id);
         log_email_in_hubspot($order_id, 'invoice', $invoice_stage_id);
     } else {
         log_email_in_hubspot($order_id, 'invoice');
@@ -43,6 +46,7 @@ function ubwoosync_send_invoice_email() {
 
     wp_send_json_success('Invoice sent successfully.');
 }
+
 
 /**
  * Manual sync of WooCommerce order from HubSpot deal
@@ -80,7 +84,6 @@ function ubwoosync_manual_sync_hubspot_order() {
         }
     }
 
-    // Shipping
     $order->set_shipping_address_1($deal['address_line_1_shipping'] ?: $deal['address_line_1']);
     $order->set_shipping_city($deal['city_shipping'] ?: $deal['city']);
     $order->set_shipping_postcode($deal['postcode_shipping'] ?: $deal['postcode']);
@@ -142,4 +145,50 @@ function ubwoosync_manual_sync_hubspot_order() {
     $order->add_order_note(sprintf('🔄 Fully re-synced with HubSpot. Pipeline: %s | Stage: %s', $pipeline_label, $dealstage_label));
 
     wp_send_json_success('Order updated with latest HubSpot deal info.');
+}
+
+
+/**
+ * Create new HubSpot deal from existing WooCommerce order
+ */
+add_action('wp_ajax_create_hubspot_deal_manual', 'hubwoosync_create_hubspot_deal_manual');
+function hubwoosync_create_hubspot_deal_manual() {
+    check_ajax_referer('create_hubspot_deal_manual_nonce', 'security');
+
+    $order_id = absint($_POST['order_id']);
+    $order = wc_get_order($order_id);
+    if (!$order) wp_send_json_error('Invalid Order ID.');
+
+    if ($order->get_meta('hubspot_deal_id')) {
+        wp_send_json_error('Deal already exists for this order.');
+    }
+
+    $pipeline_id = get_option('hubspot_pipeline_manual');
+    if (!$pipeline_id) {
+        wp_send_json_error('Manual pipeline not configured.');
+    }
+
+    $token = manage_hubspot_access_token();
+    $status_key = 'manual_wc-' . $order->get_status();
+    $mapping = get_option('hubspot_status_stage_mapping', []);
+    $stage_id = $mapping[$status_key] ?? hubspot_get_cached_first_stage_of_pipeline($pipeline_id);
+
+    $contact_id = hubspot_get_or_create_contact_id_from_order($order, $token);
+    $deal_id = hubspot_create_deal_from_order($order, $pipeline_id, $stage_id, $contact_id, $token);
+
+    if (!$deal_id) {
+        wp_send_json_error('Failed to create HubSpot deal.');
+    }
+
+    $order->update_meta_data('hubspot_deal_id', $deal_id);
+    $order->update_meta_data('hubspot_pipeline_id', $pipeline_id);
+    $order->update_meta_data('hubspot_dealstage_id', $stage_id);
+    $order->update_meta_data('order_type', 'manual');
+    $order->save();
+
+    hubspot_associate_objects($deal_id, $contact_id, $order);
+
+    $order->add_order_note("✅ Created HubSpot deal #{$deal_id} (Manual pipeline)");
+
+    wp_send_json_success('Deal successfully created.');
 }

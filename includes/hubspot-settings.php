@@ -7,6 +7,9 @@ class HubSpot_WC_Settings {
         add_action('admin_init', [__CLASS__, 'register_settings']);
         add_action('admin_init', [__CLASS__, 'maybe_refresh_cache_on_save']);
         add_action('wp_ajax_hubspot_check_connection', [__CLASS__, 'hubspot_check_connection']);
+
+        // Hook to auto-sync pipeline stage on status change
+        add_action('woocommerce_order_status_changed', [__CLASS__, 'handle_order_status_change'], 10, 3);
     }
 
     public static function register_menu() {
@@ -149,7 +152,18 @@ class HubSpot_WC_Settings {
         $pipelines = [];
         foreach ($results as $pipeline) {
             if (!empty($pipeline['id']) && !empty($pipeline['label'])) {
-                $pipelines[$pipeline['id']] = $pipeline['label'];
+                $stages_map = [];
+                if (!empty($pipeline['stages'])) {
+                    foreach ($pipeline['stages'] as $stage) {
+                        if (!empty($stage['id']) && !empty($stage['label'])) {
+                            $stages_map[$stage['id']] = $stage['label'];
+                        }
+                    }
+                }
+                $pipelines[$pipeline['id']] = [
+                    'label'  => $pipeline['label'],
+                    'stages' => $stages_map
+                ];
             }
         }
 
@@ -188,6 +202,25 @@ class HubSpot_WC_Settings {
             ]
         ]);
         wp_die();
+    }
+
+    /**
+     * Hook for order status changes to auto-sync deal stage.
+     */
+    public static function handle_order_status_change($order_id, $old_status, $new_status) {
+        if (!get_option('hubspot_pipeline_sync_enabled')) {
+            return;
+        }
+
+        $order = wc_get_order($order_id);
+        if (!$order) return;
+
+        $is_manual = get_post_meta($order_id, 'order_type', true) === 'manual';
+        $status_key = ($is_manual ? 'manual_wc' : 'online_wc') . '-' . $new_status;
+
+        if (function_exists('sync_order_to_hubspot_deal_stage')) {
+            sync_order_to_hubspot_deal_stage($order, $status_key);
+        }
     }
 }
 

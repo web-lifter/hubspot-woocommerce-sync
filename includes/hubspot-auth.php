@@ -26,14 +26,32 @@ add_action('rest_api_init', function () {
 });
 
 /**
- * Schedule a token refresh every 10 minutes.
+ * Register custom cron schedule for 30-minute intervals.
+ */
+add_filter('cron_schedules', function ($schedules) {
+    if (!isset($schedules['thirty_minutes'])) {
+        $schedules['thirty_minutes'] = [
+            'interval' => 1800,
+            'display'  => __('Every 30 Minutes'),
+        ];
+    }
+    return $schedules;
+});
+
+/**
+ * Schedule HubSpot token refresh cron event.
  */
 function schedule_hubspot_token_refresh() {
     if (!wp_next_scheduled('hubspot_token_refresh_event')) {
-        wp_schedule_event(time(), 'ten_minutes', 'hubspot_token_refresh_event');
+        wp_schedule_event(time(), 'thirty_minutes', 'hubspot_token_refresh_event');
     }
 }
 add_action('wp', 'schedule_hubspot_token_refresh');
+
+/**
+ * Hook cron event to token refresh function.
+ */
+add_action('hubspot_token_refresh_event', 'check_and_refresh_hubspot_token');
 
 /**
  * Checks and refreshes the HubSpot token if needed.
@@ -48,7 +66,7 @@ function check_and_refresh_hubspot_token(): bool {
         return false;
     }
 
-    $expires_at   = $token_data['expires_at'];
+    $expires_at    = $token_data['expires_at'];
     $refresh_token = $token_data['refresh_token'];
     $portal_id     = $token_data['portal_id'];
 
@@ -72,12 +90,11 @@ function check_and_refresh_hubspot_token(): bool {
  * Refreshes the HubSpot access token.
  */
 function refresh_hubspot_access_token($portal_id, $refresh_token) {
-    global $wpdb;
-    $table_name     = $wpdb->prefix . "hubspot_tokens";
-    $hubspot_config = include get_template_directory() . '/hubspot/variables.php';
+    global $wpdb, $hubspot_config;
+    $table_name = $wpdb->prefix . "hubspot_tokens";
 
     if (empty($hubspot_config['client_id']) || empty($hubspot_config['client_secret'])) {
-        error_log("[HubSpot OAuth] ❌ Missing HubSpot Client ID or Secret in configuration.");
+        error_log("[HubSpot OAuth] ❌ Missing HubSpot Client ID or Secret in \$hubspot_config.");
         return false;
     }
 
@@ -128,6 +145,14 @@ function refresh_hubspot_access_token($portal_id, $refresh_token) {
 
     error_log("[HubSpot OAuth] ✅ Token successfully refreshed. New expiration time: " . date("Y-m-d H:i:s", $expires_at));
     return $new_access_token;
+}
+
+/**
+ * Central utility to get a valid token: refresh if needed.
+ */
+function manage_hubspot_access_token() {
+    check_and_refresh_hubspot_token();
+    return get_hubspot_access_token();
 }
 
 /**
@@ -225,13 +250,12 @@ function steelmark_get_stored_token(WP_REST_Request $request) {
 }
 
 /**
- * Get the latest HubSpot access token
+ * Get the latest HubSpot access token.
  */
 function get_hubspot_access_token() {
     global $wpdb;
     $table = $wpdb->prefix . "hubspot_tokens";
 
-    // Defensive: ensure table exists
     if ($wpdb->get_var("SHOW TABLES LIKE '{$table}'") !== $table) {
         error_log("[HubSpot Sync] ❌ Table '{$table}' does not exist.");
         return false;

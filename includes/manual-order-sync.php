@@ -1,34 +1,17 @@
 <?php
 /**
- * Sync PayWay order numbers to HubSpot and set manual order types.
+ * Handles order type assignment and PayWay reference sync to HubSpot.
  */
 
 if (!defined('ABSPATH')) exit;
 
 /**
- * Sets manual order type if created in admin (non-REST, non-CLI).
+ * Sets the order_type meta to 'manual' or 'online' during order creation.
+ * - Admin / REST / CLI = manual
+ * - Frontend checkout = online
  */
-add_action('woocommerce_new_order', 'hubwoosync_set_manual_order_type_for_admin', 5, 2);
-function hubwoosync_set_manual_order_type_for_admin($order_id, $order) {
-    if (!is_admin() || (defined('REST_REQUEST') && REST_REQUEST) || php_sapi_name() === 'cli') return;
-
-    if (!is_a($order, 'WC_Order')) {
-        $order = wc_get_order($order_id);
-    }
-
-    $existing = $order->get_meta('order_type');
-    if (strtolower($existing) !== 'manual') {
-        $order->update_meta_data('order_type', 'manual');
-        $order->save_meta_data();
-        error_log("[Order Type] Order #$order_id created in admin — marked as manual.");
-    }
-}
-
-/**
- * Sets manual order type if created via REST API or CLI.
- */
-add_action('woocommerce_new_order', 'hubwoosync_set_manual_order_type_for_rest_api', 30, 2);
-function hubwoosync_set_manual_order_type_for_rest_api($order_id, $order) {
+add_action('woocommerce_new_order', 'hubwoosync_set_order_type_unified', 20, 2);
+function hubwoosync_set_order_type_unified($order_id, $order) {
     if (!is_a($order, 'WC_Order')) {
         $order = wc_get_order($order_id);
     }
@@ -36,19 +19,27 @@ function hubwoosync_set_manual_order_type_for_rest_api($order_id, $order) {
     $existing = $order->get_meta('order_type');
     if (strtolower($existing) === 'manual') return;
 
+    $is_admin = is_admin();
     $is_rest = defined('REST_REQUEST') && REST_REQUEST;
-    $is_cli  = php_sapi_name() === 'cli';
+    $is_cli = php_sapi_name() === 'cli';
 
-    if ($is_rest || $is_cli) {
-        $order->update_meta_data('order_type', 'manual');
-        $order->save_meta_data();
-        error_log("[Order Type] Order #$order_id created via REST or CLI — marked as manual.");
-    }
+    $order_type = ($is_admin || $is_rest || $is_cli) ? 'manual' : 'online';
+    $order->update_meta_data('order_type', $order_type);
+    $order->save_meta_data();
+
+    error_log("[Order Type] Order #$order_id marked as {$order_type}.");
 }
 
 /**
- * Sync PayWay order number to HubSpot deal.
- * Call this function manually after creating an order.
+ * Automatically sync PayWay order number to HubSpot after payment.
+ */
+add_action('woocommerce_payment_complete', 'hubwoosync_trigger_payway_reference_sync');
+function hubwoosync_trigger_payway_reference_sync($order_id) {
+    hubwoosync_sync_payway_order_number_to_hubspot($order_id);
+}
+
+/**
+ * Sync PayWay order number to HubSpot deal if available.
  */
 function hubwoosync_sync_payway_order_number_to_hubspot($order_id) {
     $order = wc_get_order($order_id);

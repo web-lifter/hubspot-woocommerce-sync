@@ -1,13 +1,9 @@
 <?php
 
-if (!defined('ABSPATH')) {
-    exit;
-}
+if (!defined('ABSPATH')) exit;
 
 // Sets content type to HTML for wp_mail
-add_filter('wp_mail_content_type', function () {
-    return 'text/html';
-});
+add_filter('wp_mail_content_type', fn() => 'text/html');
 
 /**
  * Sends invoice email and updates HubSpot stage.
@@ -43,29 +39,30 @@ function send_invoice($order_id) {
     wp_mail($email, $subject, $message, $headers);
 
     $order->update_meta_data('invoice_last_sent', current_time('mysql', true));
-    $order->update_meta_data('quote_status', 'Invoice Sent');
+    $order->update_meta_data('invoice_status', 'Invoice Sent');
 
     $manual = is_order_manual($order);
     $stage_option = $manual ? 'hubspot_stage_invoice_sent_manual' : 'hubspot_stage_invoice_sent_online';
     $stage_id = get_option($stage_option);
 
-    log_email_in_hubspot($order->get_id(), 'invoice');
-    update_hubspot_deal_stage($order->get_id(), $stage_id);
+    if ($stage_id && $order->get_meta('hubspot_deal_id')) {
+        update_hubspot_deal_stage($order_id, $stage_id);
+        $order->update_meta_data('hubspot_dealstage_id', $stage_id);
+        log_email_in_hubspot($order_id, 'invoice');
+    } else {
+        error_log("[HubSpot] ⚠️ Skipping HubSpot sync: No deal ID or stage set.");
+    }
 
-    $order->update_meta_data('hubspot_dealstage_id', $stage_id);
-    $order->update_meta_data('invoice_status', 'Invoice Sent');
     $order->save();
 }
+
 
 /**
  * Updates the HubSpot deal stage for the order.
  */
 function update_hubspot_deal_stage($order_id, $stage_id) {
     $order = wc_get_order($order_id);
-    if (!$order) {
-        error_log("[ERROR] Invalid order in update_hubspot_deal_stage(): {$order_id}");
-        return;
-    }
+    if (!$order) return;
 
     $deal_id = $order->get_meta('hubspot_deal_id');
     if (!$deal_id) {
@@ -101,15 +98,13 @@ function update_hubspot_deal_stage($order_id, $stage_id) {
     error_log("[DEBUG] HubSpot deal {$deal_id} stage updated to {$stage_id}");
 }
 
+
 /**
  * Logs a HubSpot email activity and associates with the deal.
  */
 function log_email_in_hubspot($order_id, $email_type = 'general', $subject_override = null, $body_override = null) {
     $order = wc_get_order($order_id);
-    if (!$order) {
-        error_log("[HubSpot][ERROR] Invalid order object in log_email_in_hubspot().");
-        return;
-    }
+    if (!$order) return;
 
     $deal_id = $order->get_meta('hubspot_deal_id');
     if (!$deal_id || !is_string($deal_id)) {
@@ -129,23 +124,19 @@ function log_email_in_hubspot($order_id, $email_type = 'general', $subject_overr
     $order_key = $order->get_order_key();
     $payment_url = get_site_url() . "/checkout/order-pay/{$order_id}/?key={$order_key}";
 
-    if (!$subject_override) {
-        $subject_override = match($email_type) {
-            'quote' => "Quote Sent for Order #{$order_id}",
-            'invoice' => "Invoice Sent for Order #{$order_id}",
-            'quote_accepted' => "Quote Accepted for Order #{$order_id}",
-            default => "Email Sent for Order #{$order_id}"
-        };
-    }
+    $subject_override ??= match($email_type) {
+        'quote' => "Quote Sent for Order #{$order_id}",
+        'invoice' => "Invoice Sent for Order #{$order_id}",
+        'quote_accepted' => "Quote Accepted for Order #{$order_id}",
+        default => "Email Sent for Order #{$order_id}"
+    };
 
-    if (!$body_override) {
-        $body_override = match($email_type) {
-            'quote' => "A quote has been sent for Order #{$order_id}. The customer received an email with a link to accept the quote.\n\nOrder Details:\nOrder ID: {$order_id}\nPayment Link: {$payment_url}",
-            'invoice' => "An invoice has been sent for Order #{$order_id}. The customer can use the link below to complete the payment.\n\nOrder Details:\nOrder ID: {$order_id}\nPayment Link: {$payment_url}",
-            'quote_accepted' => "The quote for Order #{$order_id} has been accepted by the customer and the order is now pending payment.\n\nPayment Link: {$payment_url}",
-            default => "An email has been sent for Order #{$order_id}.\n\nOrder Details:\nOrder ID: {$order_id}\nPayment Link: {$payment_url}"
-        };
-    }
+    $body_override ??= match($email_type) {
+        'quote' => "A quote has been sent for Order #{$order_id}.\nPayment Link: {$payment_url}",
+        'invoice' => "An invoice has been sent for Order #{$order_id}.\nPayment Link: {$payment_url}",
+        'quote_accepted' => "The quote for Order #{$order_id} has been accepted.\nPayment Link: {$payment_url}",
+        default => "Email activity for Order #{$order_id}.\nPayment Link: {$payment_url}"
+    };
 
     $email_payload = [
         "properties" => [
@@ -172,13 +163,12 @@ function log_email_in_hubspot($order_id, $email_type = 'general', $subject_overr
     }
 
     $email_response_body = json_decode(wp_remote_retrieve_body($email_response), true);
-    if (empty($email_response_body['id'])) {
+    $email_id = $email_response_body['id'] ?? null;
+
+    if (!$email_id) {
         error_log("[HubSpot][ERROR] Failed to create email object: " . print_r($email_response_body, true));
         return;
     }
-
-    $email_id = $email_response_body['id'];
-    error_log("[HubSpot][DEBUG] Created email ID {$email_id} for Order #{$order_id}");
 
     $association_payload = [
         "inputs" => [[
@@ -205,53 +195,38 @@ function log_email_in_hubspot($order_id, $email_type = 'general', $subject_overr
         return;
     }
 
-    $association_response_body = json_decode(wp_remote_retrieve_body($association_response), true);
-    if (!empty($association_response_body['status']) && $association_response_body['status'] === "error") {
-        error_log("[HubSpot][ERROR] Association error: " . print_r($association_response_body, true));
-    } else {
-        error_log("[HubSpot][DEBUG] Email associated with Deal ID {$deal_id}");
-    }
+    $result = json_decode(wp_remote_retrieve_body($association_response), true);
+    error_log("[HubSpot][DEBUG] Email ID {$email_id} associated with Deal ID {$deal_id}");
 }
+
 
 /**
  * Handles quote acceptance from email link.
  */
 add_action('init', 'handle_quote_acceptance');
-
 function handle_quote_acceptance() {
-    if (!isset($_GET['accept_quote'], $_GET['order_id']) || sanitize_text_field($_GET['accept_quote']) !== 'yes') {
+    if (!isset($_GET['accept_quote'], $_GET['order_id']) || $_GET['accept_quote'] !== 'yes') {
         return;
     }
 
     $order_id = absint($_GET['order_id']);
     $order = wc_get_order($order_id);
-    if (!$order) {
-        error_log("[ERROR] Invalid order in update_hubspot_deal_stage(): {$order_id}");
-        return;
-    }
+    if (!$order) return;
 
-    $current_status = $order->get_meta('quote_status');
-    if ($current_status === 'Quote Accepted') return;
+    if ($order->get_meta('quote_status') === 'Quote Accepted') return;
 
     $order->update_meta_data('quote_status', 'Quote Accepted');
 
     $manual = is_order_manual($order);
-    $accepted_stage_option = $manual ? 'hubspot_stage_quote_accepted_manual' : 'hubspot_stage_quote_accepted_online';
-    $accepted_stage_id = get_option($accepted_stage_option);
+    $stage_option = $manual ? 'hubspot_stage_quote_accepted_manual' : 'hubspot_stage_quote_accepted_online';
+    $accepted_stage_id = get_option($stage_option);
 
-    if ($accepted_stage_id) {
+    if ($accepted_stage_id && $order->get_meta('hubspot_deal_id')) {
         update_hubspot_deal_stage($order_id, $accepted_stage_id);
     }
 
     log_email_in_hubspot($order_id, 'quote_accepted');
-
-    // Send invoice now
     send_invoice($order_id);
-
-    // Trigger another invoice send on template redirect (redundancy for failover)
-    add_action('template_redirect', function () use ($order) {
-        send_invoice($order);
-    }, 99);
 
     wp_redirect(add_query_arg([
         'order_id' => $order_id,
@@ -259,6 +234,7 @@ function handle_quote_acceptance() {
     ], site_url('/quote-accepted/')));
     exit;
 }
+
 
 /**
  * AJAX handler to reset quote status.
