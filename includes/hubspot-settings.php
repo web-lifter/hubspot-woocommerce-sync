@@ -99,7 +99,8 @@ class HubSpot_WC_Settings {
     }
 
     private static function render_authentication_settings() {
-        $auth_url = get_site_url() . "/wp-json/hubspot/v1/start-auth";
+        $nonce    = wp_create_nonce( 'wp_rest' );
+        $auth_url = add_query_arg( '_wpnonce', $nonce, get_site_url() . '/wp-json/hubspot/v1/start-auth' );
         ?>
         <h3><?php esc_html_e('HubSpot Authentication & Setup', 'hub-woo-sync'); ?></h3>
         <p><?php esc_html_e('Status:', 'hub-woo-sync'); ?> <span id="hubspot-connection-status" style="color: red;"><?php esc_html_e('Checking...', 'hub-woo-sync'); ?></span></p>
