@@ -186,7 +186,8 @@ function hubwoosync_create_hubspot_deal_manual() {
     $order->update_meta_data('order_type', 'manual');
     $order->save();
 
-    hubspot_associate_objects($deal_id, $contact_id, $order);
+    // Associate the new deal with the contact in HubSpot
+    hubspot_associate_objects('deal', $deal_id, 'contact', $contact_id, $token);
 
     $order->add_order_note("✅ Created HubSpot deal #{$deal_id} (Manual pipeline)");
 
