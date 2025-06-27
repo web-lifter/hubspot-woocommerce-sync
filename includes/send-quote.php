@@ -2,6 +2,74 @@
 
 if (!defined('ABSPATH')) exit;
 
+/**
+ * Send a quote email and update HubSpot stage.
+ *
+ * @param int $order_id Order identifier.
+ */
+function send_quote($order_id) {
+    $order = wc_get_order($order_id);
+    if (!$order) {
+        return;
+    }
+
+    $email = $order->get_billing_email();
+    if (!$email) {
+        return;
+    }
+
+    $accept_url = add_query_arg([
+        'accept_quote' => 'yes',
+        'order_id'     => $order_id,
+        'key'          => $order->get_order_key(),
+    ], site_url('/'));
+
+    $subject = sprintf('[Steelmark Quote] Order #%s', $order->get_order_number());
+
+    ob_start();
+    wc_get_template('emails/email-header.php', [], '', get_stylesheet_directory() . '/woocommerce/');
+    wc_get_template(
+        'emails/customer-quote.php',
+        ['order' => $order, 'accept_url' => $accept_url],
+        '',
+        get_stylesheet_directory() . '/woocommerce/'
+    );
+    wc_get_template('emails/email-footer.php', [], '', get_stylesheet_directory() . '/woocommerce/');
+    $message = ob_get_clean();
+
+    $headers = [
+        'MIME-Version: 1.0',
+        'Content-Type: text/html; charset=UTF-8',
+        'From: Steelmark <website@steelmark.com.au>',
+        'Reply-To: website@steelmark.com.au',
+        'Return-Path: website@steelmark.com.au',
+        'X-Mailer: PHP/' . phpversion(),
+        'X-Priority: 3 (Normal)',
+    ];
+
+    $html_callback = fn() => 'text/html';
+    add_filter('wp_mail_content_type', $html_callback);
+    wp_mail($email, $subject, $message, $headers);
+    remove_filter('wp_mail_content_type', $html_callback);
+
+    $order->update_meta_data('quote_status', 'Quote Sent');
+    $order->update_meta_data('quote_last_sent', current_time('mysql', true));
+
+    $manual       = is_order_manual($order);
+    $stage_option = $manual ? 'hubspot_stage_quote_sent_manual' : 'hubspot_stage_quote_sent_online';
+    $stage_id     = get_option($stage_option);
+
+    if ($stage_id && $order->get_meta('hubspot_deal_id')) {
+        update_hubspot_deal_stage($order_id, $stage_id);
+        $order->update_meta_data('hubspot_dealstage_id', $stage_id);
+        log_email_in_hubspot($order_id, 'quote');
+    } else {
+        error_log('[HubSpot] ⚠️ Skipping HubSpot sync: No deal ID or stage set.');
+    }
+
+    $order->save();
+}
+
 
 /**
  * Sends invoice email and updates HubSpot stage.

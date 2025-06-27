@@ -8,6 +8,28 @@
 if (!defined('ABSPATH')) exit;
 
 /**
+ * Send quote email and update HubSpot deal stage.
+ */
+add_action('wp_ajax_send_quote_email', 'hubwoosync_send_quote_email');
+function hubwoosync_send_quote_email() {
+    check_ajax_referer('send_quote_email_nonce', 'security');
+
+    if (! current_user_can('manage_woocommerce')) {
+        wp_send_json_error('Unauthorized', 403);
+    }
+
+    $order_id = absint($_POST['order_id']);
+    $order    = wc_get_order($order_id);
+    if (! $order) {
+        wp_send_json_error('Invalid Order ID.');
+    }
+
+    send_quote($order_id);
+
+    wp_send_json_success('Quote sent successfully.');
+}
+
+/**
  * Send invoice email and update HubSpot deal
  */
 add_action('wp_ajax_hubwoosync_send_invoice_email', 'hubwoosync_send_invoice_email');
