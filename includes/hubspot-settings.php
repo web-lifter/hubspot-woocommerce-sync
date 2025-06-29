@@ -27,6 +27,7 @@ class HubSpot_WC_Settings {
         register_setting('hubspot_wc_settings', 'hubspot_stage_quote_accepted_online');
         register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_manual');
         register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_online');
+        register_setting('hubspot_wc_settings', 'hubspot_autocomplete_online_order');
     }
 
     /**
@@ -79,6 +80,7 @@ class HubSpot_WC_Settings {
             <h2 class="nav-tab-wrapper">
                 <a href="?page=hubspot-woocommerce-sync&tab=authentication" class="nav-tab <?php echo self::get_active_tab('authentication'); ?>"><?php esc_html_e('HubSpot Setup', 'hub-woo-sync'); ?></a>
                 <a href="?page=hubspot-woocommerce-sync&tab=woocommerce" class="nav-tab <?php echo self::get_active_tab('woocommerce'); ?>"><?php esc_html_e('Pipelines', 'hub-woo-sync'); ?></a>
+                <a href="?page=hubspot-woocommerce-sync&tab=orders" class="nav-tab <?php echo self::get_active_tab('orders'); ?>"><?php esc_html_e('Orders', 'hub-woo-sync'); ?></a>
             </h2>
 
             <form method="post" action="options.php">
@@ -90,6 +92,8 @@ class HubSpot_WC_Settings {
                     self::render_authentication_settings();
                 } elseif ($active_tab === 'woocommerce') {
                     self::render_woocommerce_settings();
+                } elseif ($active_tab === 'orders') {
+                    self::render_orders_settings();
                 }
                 submit_button();
                 ?>
@@ -225,6 +229,15 @@ class HubSpot_WC_Settings {
             }
             echo '</select></td></tr>';
         }
+        echo '</tbody></table>';
+    }
+
+    private static function render_orders_settings() {
+        $val = get_option('hubspot_autocomplete_online_order');
+        echo '<h3>' . esc_html__('Order Settings', 'hub-woo-sync') . '</h3>';
+        echo '<table class="form-table"><tbody>';
+        echo '<tr><th scope="row">' . esc_html__('Autocomplete Online Order', 'hub-woo-sync') . '</th>';
+        echo '<td><label><input type="checkbox" name="hubspot_autocomplete_online_order" value="1"' . checked(1, $val, false) . ' /> ' . esc_html__('Automatically mark online orders complete after payment', 'hub-woo-sync') . '</label></td></tr>';
         echo '</tbody></table>';
     }
 
