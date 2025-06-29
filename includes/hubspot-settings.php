@@ -235,11 +235,27 @@ class HubSpot_WC_Settings {
     }
 
     private static function render_orders_settings() {
-        $val = get_option('hubspot_autocomplete_online_order');
+        $auto_val      = get_option('hubspot_autocomplete_online_order');
+        $cleanup_stat  = get_option('hubspot_order_cleanup_status');
+        $cleanup_days  = get_option('hubspot_order_cleanup_days');
+
         echo '<h3>' . esc_html__('Order Settings', 'hub-woo-sync') . '</h3>';
         echo '<table class="form-table"><tbody>';
+
         echo '<tr><th scope="row">' . esc_html__('Autocomplete Online Order', 'hub-woo-sync') . '</th>';
-        echo '<td><label><input type="checkbox" name="hubspot_autocomplete_online_order" value="1"' . checked(1, $val, false) . ' /> ' . esc_html__('Automatically mark online orders complete after payment', 'hub-woo-sync') . '</label></td></tr>';
+        echo '<td><label><input type="checkbox" name="hubspot_autocomplete_online_order" value="1"' . checked(1, $auto_val, false) . ' /> ' . esc_html__('Automatically mark online orders complete after payment', 'hub-woo-sync') . '</label></td></tr>';
+
+        $statuses = wc_get_order_statuses();
+        echo '<tr><th scope="row"><label for="hubspot_order_cleanup_status">' . esc_html__('Cleanup Order Status', 'hub-woo-sync') . '</label></th>';
+        echo '<td><select id="hubspot_order_cleanup_status" name="hubspot_order_cleanup_status">';
+        foreach ($statuses as $slug => $label) {
+            echo '<option value="' . esc_attr($slug) . '"' . selected($cleanup_stat, $slug, false) . '>' . esc_html($label) . '</option>';
+        }
+        echo '</select></td></tr>';
+
+        echo '<tr><th scope="row"><label for="hubspot_order_cleanup_days">' . esc_html__('Cleanup After (days)', 'hub-woo-sync') . '</label></th>';
+        echo '<td><input type="number" min="1" id="hubspot_order_cleanup_days" name="hubspot_order_cleanup_days" value="' . esc_attr($cleanup_days) . '" /></td></tr>';
+
         echo '</tbody></table>';
     }
 
