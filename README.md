@@ -27,6 +27,8 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
   * Deal notes from WooCommerce’s customer note field
   * PayWay transaction reference, if available
   * Pipeline and stage mappings from WooCommerce order status
+* **Automatic Order Completion**
+  Online orders can be marked **complete** automatically when enabled in the **Orders** tab.
 
 * **Manual Deal Creation**
   For unpaid or offline WooCommerce orders, admins can click **“Create Deal”** in the Order Management screen. This sends the order to a different pipeline (e.g., Manual/Quotes) with mappings tailored for manual flows.
@@ -124,6 +126,7 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
 3. Click the **Connect HubSpot** button and follow the authorization flow.
 4. Once authenticated, choose your **HubSpot pipeline** for WooCommerce orders.
 5. Enable **Automatic Deal Creation** to sync new orders.
+6. In the **Orders** tab, enable **Auto-Complete Online Orders** to automatically mark paid orders complete.
 
 ### Admin-Created Orders
 Orders created manually in WooCommerce are **not** synced automatically. After
