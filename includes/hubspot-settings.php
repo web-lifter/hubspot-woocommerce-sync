@@ -98,6 +98,9 @@ class HubSpot_WC_Settings {
                     self::render_orders_settings();
                 }
                 submit_button();
+                if ($active_tab === 'woocommerce') {
+                    echo '<button class="button" name="hubspot_refresh_pipelines" value="1">' . esc_html__('Sync', 'hub-woo-sync') . '</button>';
+                }
                 ?>
             </form>
         </div>
@@ -264,8 +267,20 @@ class HubSpot_WC_Settings {
     }
 
     public static function maybe_refresh_cache_on_save() {
-        if (isset($_GET['page'], $_GET['settings-updated']) && $_GET['page'] === 'hubspot-woocommerce-sync') {
+        if (!empty($_POST['hubspot_refresh_pipelines'])) {
             self::refresh_pipeline_cache();
+            set_transient('hubspot_pipelines_synced', 1, 30);
+        } elseif (isset($_GET['page'], $_GET['settings-updated']) && $_GET['page'] === 'hubspot-woocommerce-sync') {
+            self::refresh_pipeline_cache();
+        }
+
+        add_action('admin_notices', [__CLASS__, 'maybe_display_sync_notice']);
+    }
+
+    public static function maybe_display_sync_notice() {
+        if (get_transient('hubspot_pipelines_synced')) {
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('HubSpot pipelines refreshed.', 'hub-woo-sync') . '</p></div>';
+            delete_transient('hubspot_pipelines_synced');
         }
     }
 
