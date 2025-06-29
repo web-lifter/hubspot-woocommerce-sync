@@ -236,6 +236,10 @@ function steelmark_handle_oauth_callback(WP_REST_Request $request) {
         'expires_at'    => time() + intval($body['expires_in'])
     ], ['%d', '%s', '%s', '%d']);
 
+    if (class_exists('HubSpot_WC_Settings')) {
+        HubSpot_WC_Settings::refresh_pipeline_cache();
+    }
+
     wp_redirect(home_url() . '?hubspot_auth=success');
     exit;
 }
