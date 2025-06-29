@@ -138,14 +138,16 @@ class HubSpot_WC_Settings {
                     }
                     if (response.connected === 'yes') {
                         $('#hubspot-connection-status').html('<span style="color: green;">Connected</span>');
+                        $('#hubspot-auth-button').text('Reauthorize HubSpot');
                         $('#portal-id').text(response.account_info["Portal ID"]);
                         $('#account-type').text(response.account_info["Account Type"]);
                         $('#time-zone').text(response.account_info["Time Zone"]);
                         $('#company-currency').text(response.account_info["Company Currency"]);
                         $('#data-hosting').text(response.account_info["Data Hosting Location"]);
-                        $('#access-token').text(response.account_info["Access Token (truncated)"]);
+                        $('#access-token').text(response.account_info["Access Token (truncated)"]); 
                     } else {
                         $('#hubspot-connection-status').text('Not Connected');
+                        $('#hubspot-auth-button').text('Connect HubSpot');
                     }
                 });
             }
