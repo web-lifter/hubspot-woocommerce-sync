@@ -29,6 +29,7 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
   * Pipeline and stage mappings from WooCommerce order status
 * **Automatic Order Completion**
   Online orders can be marked **complete** automatically when enabled in the **Orders** tab.
+* Order cleanup: automatically delete orders that remain in a chosen status (e.g., Pending Payment) for a specified number of days. These controls live in the **Orders** tab.
 
 * **Manual Deal Creation**
   For unpaid or offline WooCommerce orders, admins can click **“Create Deal”** in the Order Management screen. This sends the order to a different pipeline (e.g., Manual/Quotes) with mappings tailored for manual flows.
