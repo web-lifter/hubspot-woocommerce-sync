@@ -1,6 +1,4 @@
 <?php
-use WP_REST_Request;
-use WP_REST_Response;
 
 /**
  * Register REST API routes for HubSpot OAuth.
@@ -9,16 +7,25 @@ add_action('rest_api_init', function () {
     register_rest_route('hubspot/v1', '/start-auth', [
         'methods'             => 'GET',
         'callback'            => 'steelmark_start_hubspot_auth',
+        'permission_callback' => function() {
+            return current_user_can('manage_options');
+        },
     ]);
 
     register_rest_route('hubspot/v1', '/oauth/callback', [
         'methods'             => 'GET',
         'callback'            => 'steelmark_handle_oauth_callback',
+        'permission_callback' => function() {
+            return current_user_can('manage_options');
+        },
     ]);
 
     register_rest_route('hubspot/v1', '/get-token', [
         'methods'             => 'GET',
         'callback'            => 'steelmark_get_stored_token',
+        'permission_callback' => function() {
+            return current_user_can('manage_options');
+        },
     ]);
 });
 
