@@ -119,6 +119,10 @@ function hubwoo_activation() {
     if (!wp_next_scheduled('hubspot_token_refresh_event')) {
         wp_schedule_event(time(), 'thirty_minutes', 'hubspot_token_refresh_event');
     }
+
+    if (!wp_next_scheduled('hubspot_order_cleanup_event')) {
+        wp_schedule_event(time(), 'daily', 'hubspot_order_cleanup_event');
+    }
 }
 
 /**
@@ -127,4 +131,5 @@ function hubwoo_activation() {
  */
 function hubwoo_deactivation() {
     wp_clear_scheduled_hook('hubspot_token_refresh_event');
+    wp_clear_scheduled_hook('hubspot_order_cleanup_event');
 }
