@@ -10,6 +10,10 @@ License: GPL-3.0
 Text Domain: hubspot-woocommerce-sync
 */
 
+// Data retention note: plugin deactivation or update does not remove any
+// HubSpot options or the `hubspot_tokens` table. Those are only deleted when
+// uninstall.php runs after the plugin is deleted.
+
 if (!defined('ABSPATH')) {
     exit;
 }
@@ -98,6 +102,8 @@ register_deactivation_hook(__FILE__, 'hubwoo_deactivation');
 /**
  * Plugin activation callback.
  * Creates the `hubspot_tokens` table and schedules a token refresh cron.
+ * No data is removed during activation or deactivation; stored tokens and
+ * options remain intact.
  */
 function hubwoo_activation() {
     global $wpdb;
@@ -127,7 +133,8 @@ function hubwoo_activation() {
 
 /**
  * Plugin deactivation callback.
- * Clears the scheduled token refresh cron.
+ * Clears scheduled cron events. Data and tables are preserved so the
+ * plugin can be reactivated without reconnecting.
  */
 function hubwoo_deactivation() {
     wp_clear_scheduled_hook('hubspot_token_refresh_event');
