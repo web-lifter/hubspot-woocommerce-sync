@@ -15,21 +15,32 @@ class HubSpot_WC_Settings {
     }
 
     public static function register_settings() {
-        register_setting('hubspot_wc_settings', 'hubspot_connected');
-        register_setting('hubspot_wc_settings', 'hubspot_auto_create_deal');
-        register_setting('hubspot_wc_settings', 'hubspot_pipeline_online');
-        register_setting('hubspot_wc_settings', 'hubspot_pipeline_manual');
-        register_setting('hubspot_wc_settings', 'hubspot_pipeline_sync_enabled');
-        register_setting('hubspot_wc_settings', 'hubspot_status_stage_mapping');
-        register_setting('hubspot_wc_settings', 'hubspot_stage_quote_sent_manual');
-        register_setting('hubspot_wc_settings', 'hubspot_stage_quote_sent_online');
-        register_setting('hubspot_wc_settings', 'hubspot_stage_quote_accepted_manual');
-        register_setting('hubspot_wc_settings', 'hubspot_stage_quote_accepted_online');
-        register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_manual');
-        register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_online');
-        register_setting('hubspot_wc_settings', 'hubspot_autocomplete_online_order');
-        register_setting('hubspot_wc_settings', 'hubspot_order_cleanup_status');
-        register_setting('hubspot_wc_settings', 'hubspot_order_cleanup_days');
+        // Authentication related settings.
+        register_setting('hubspot_wc_auth', 'hubspot_connected');
+        register_setting('hubspot_wc_auth', 'hubspot_auto_create_deal', [
+            'sanitize_callback' => [__CLASS__, 'sanitize_checkbox'],
+        ]);
+
+        // Pipeline and stage mapping settings.
+        register_setting('hubspot_wc_pipelines', 'hubspot_pipeline_online');
+        register_setting('hubspot_wc_pipelines', 'hubspot_pipeline_manual');
+        register_setting('hubspot_wc_pipelines', 'hubspot_pipeline_sync_enabled', [
+            'sanitize_callback' => [__CLASS__, 'sanitize_checkbox'],
+        ]);
+        register_setting('hubspot_wc_pipelines', 'hubspot_status_stage_mapping');
+        register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_sent_manual');
+        register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_sent_online');
+        register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_accepted_manual');
+        register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_accepted_online');
+        register_setting('hubspot_wc_pipelines', 'hubspot_stage_invoice_sent_manual');
+        register_setting('hubspot_wc_pipelines', 'hubspot_stage_invoice_sent_online');
+
+        // Order settings.
+        register_setting('hubspot_wc_orders', 'hubspot_autocomplete_online_order', [
+            'sanitize_callback' => [__CLASS__, 'sanitize_checkbox'],
+        ]);
+        register_setting('hubspot_wc_orders', 'hubspot_order_cleanup_status');
+        register_setting('hubspot_wc_orders', 'hubspot_order_cleanup_days');
     }
 
     /**
@@ -85,10 +96,19 @@ class HubSpot_WC_Settings {
                 <a href="?page=hubspot-woocommerce-sync&tab=orders" class="nav-tab <?php echo self::get_active_tab('orders'); ?>"><?php esc_html_e('Orders', 'hub-woo-sync'); ?></a>
             </h2>
 
+            <?php
+            $option_group = 'hubspot_wc_auth';
+            if ($active_tab === 'woocommerce') {
+                $option_group = 'hubspot_wc_pipelines';
+            } elseif ($active_tab === 'orders') {
+                $option_group = 'hubspot_wc_orders';
+            }
+            ?>
+
             <form method="post" action="options.php">
                 <?php
-                settings_fields('hubspot_wc_settings');
-                do_settings_sections('hubspot_wc_settings');
+                settings_fields($option_group);
+                do_settings_sections($option_group);
 
                 if ($active_tab === 'authentication') {
                     self::render_authentication_settings();
@@ -187,7 +207,8 @@ class HubSpot_WC_Settings {
         echo '</select></td></tr>';
 
         echo '<tr><th scope="row">' . esc_html__('Sync Order Status Changes', 'hub-woo-sync') . '</th>';
-        echo '<td><label><input type="checkbox" name="hubspot_pipeline_sync_enabled" value="1"' . checked(1, $sync_enabled, false) . ' /> ' . esc_html__('Update HubSpot deal stage when order status changes', 'hub-woo-sync') . '</label></td></tr>';
+        echo '<td><input type="hidden" name="hubspot_pipeline_sync_enabled" value="0" />';
+        echo '<label><input type="checkbox" name="hubspot_pipeline_sync_enabled" value="1"' . checked(1, $sync_enabled, false) . ' /> ' . esc_html__('Update HubSpot deal stage when order status changes', 'hub-woo-sync') . '</label></td></tr>';
         echo '</tbody></table>';
 
         echo '<h4>' . esc_html__('WooCommerce Status → HubSpot Stage Mapping', 'hub-woo-sync') . '</h4>';
@@ -248,7 +269,8 @@ class HubSpot_WC_Settings {
         echo '<table class="form-table"><tbody>';
 
         echo '<tr><th scope="row">' . esc_html__('Autocomplete Online Order', 'hub-woo-sync') . '</th>';
-        echo '<td><label><input type="checkbox" name="hubspot_autocomplete_online_order" value="1"' . checked(1, $auto_val, false) . ' /> ' . esc_html__('Automatically mark online orders complete after payment', 'hub-woo-sync') . '</label></td></tr>';
+        echo '<td><input type="hidden" name="hubspot_autocomplete_online_order" value="0" />';
+        echo '<label><input type="checkbox" name="hubspot_autocomplete_online_order" value="1"' . checked(1, $auto_val, false) . ' /> ' . esc_html__('Automatically mark online orders complete after payment', 'hub-woo-sync') . '</label></td></tr>';
 
         $statuses = wc_get_order_statuses();
         echo '<tr><th scope="row"><label for="hubspot_order_cleanup_status">' . esc_html__('Cleanup Order Status', 'hub-woo-sync') . '</label></th>';
@@ -381,6 +403,13 @@ class HubSpot_WC_Settings {
         if (function_exists('sync_order_to_hubspot_deal_stage')) {
             sync_order_to_hubspot_deal_stage($order, $status_key);
         }
+    }
+
+    /**
+     * Sanitize checkbox values to be strictly 0 or 1.
+     */
+    public static function sanitize_checkbox($value) {
+        return empty($value) ? 0 : 1;
     }
 }
 
