@@ -86,6 +86,7 @@ require_once HUBSPOT_WC_SYNC_PATH . 'includes/send-quote.php';
 require_once HUBSPOT_WC_SYNC_PATH . 'includes/create-object.php';
 require_once HUBSPOT_WC_SYNC_PATH . 'includes/fetch-object.php';
 require_once HUBSPOT_WC_SYNC_PATH . 'includes/hub-order-management.php';
+require_once HUBSPOT_WC_SYNC_PATH . 'includes/order-cleanup.php';
 
 // Initialize plugin settings
 HubSpot_WC_Settings::init();
