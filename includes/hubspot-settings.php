@@ -28,6 +28,8 @@ class HubSpot_WC_Settings {
         register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_manual');
         register_setting('hubspot_wc_settings', 'hubspot_stage_invoice_sent_online');
         register_setting('hubspot_wc_settings', 'hubspot_autocomplete_online_order');
+        register_setting('hubspot_wc_settings', 'hubspot_order_cleanup_status');
+        register_setting('hubspot_wc_settings', 'hubspot_order_cleanup_days');
     }
 
     /**
