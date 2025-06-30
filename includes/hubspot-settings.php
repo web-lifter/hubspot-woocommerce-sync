@@ -27,7 +27,13 @@ class HubSpot_WC_Settings {
         register_setting('hubspot_wc_pipelines', 'hubspot_pipeline_sync_enabled', [
             'sanitize_callback' => [__CLASS__, 'sanitize_checkbox'],
         ]);
-        register_setting('hubspot_wc_pipelines', 'hubspot_status_stage_mapping');
+        register_setting(
+            'hubspot_wc_pipelines',
+            'hubspot_status_stage_mapping',
+            [
+                'sanitize_callback' => [__CLASS__, 'sanitize_stage_mapping'],
+            ]
+        );
         register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_sent_manual');
         register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_sent_online');
         register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_accepted_manual');
@@ -403,6 +409,56 @@ class HubSpot_WC_Settings {
         if (function_exists('sync_order_to_hubspot_deal_stage')) {
             sync_order_to_hubspot_deal_stage($order, $status_key);
         }
+    }
+
+    /**
+     * Sanitize stage mapping ensuring stages belong to selected pipelines.
+     */
+    public static function sanitize_stage_mapping($mapping) {
+        if (!is_array($mapping)) {
+            $mapping = [];
+        }
+
+        $online_pipeline = $_POST['hubspot_pipeline_online'] ?? get_option('hubspot_pipeline_online');
+        $manual_pipeline = $_POST['hubspot_pipeline_manual'] ?? get_option('hubspot_pipeline_manual');
+
+        $pipelines     = get_option('hubspot_cached_pipelines', []);
+        $online_stages = $pipelines[$online_pipeline]['stages'] ?? [];
+        $manual_stages = $pipelines[$manual_pipeline]['stages'] ?? [];
+
+        foreach ($mapping as $key => $stage_id) {
+            $stage_id = sanitize_text_field($stage_id);
+
+            if (strpos($key, 'online_wc-') === 0) {
+                if ($stage_id && !isset($online_stages[$stage_id])) {
+                    $mapping[$key] = '';
+                    add_settings_error(
+                        'hubspot_status_stage_mapping',
+                        'invalid_stage_' . $key,
+                        sprintf(__('Invalid stage selected for %s; value cleared.', 'hub-woo-sync'), esc_html($key)),
+                        'error'
+                    );
+                } else {
+                    $mapping[$key] = $stage_id;
+                }
+            } elseif (strpos($key, 'manual_wc-') === 0) {
+                if ($stage_id && !isset($manual_stages[$stage_id])) {
+                    $mapping[$key] = '';
+                    add_settings_error(
+                        'hubspot_status_stage_mapping',
+                        'invalid_stage_' . $key,
+                        sprintf(__('Invalid stage selected for %s; value cleared.', 'hub-woo-sync'), esc_html($key)),
+                        'error'
+                    );
+                } else {
+                    $mapping[$key] = $stage_id;
+                }
+            } else {
+                unset($mapping[$key]);
+            }
+        }
+
+        return $mapping;
     }
 
     /**
