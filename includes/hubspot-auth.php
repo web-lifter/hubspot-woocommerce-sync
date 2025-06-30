@@ -20,13 +20,15 @@ add_action('rest_api_init', function () {
         },
     ]);
 
-    register_rest_route('hubspot/v1', '/get-token', [
-        'methods'             => 'GET',
-        'callback'            => 'get_stored_token',
-        'permission_callback' => function() {
-            return current_user_can('manage_options');
-        },
-    ]);
+    if (defined('HUBSPOT_WC_DEBUG') && HUBSPOT_WC_DEBUG) {
+        register_rest_route('hubspot/v1', '/get-token', [
+            'methods'             => 'GET',
+            'callback'            => 'get_stored_token',
+            'permission_callback' => function() {
+                return current_user_can('manage_options');
+            },
+        ]);
+    }
 });
 
 /**
