@@ -27,7 +27,12 @@ function sync_order_to_hubspot_deal_stage($order, $status_key, $log_prefix = '[H
 
     if (empty($deal_stage)) {
         // Try to fallback to first stage of pipeline
-        $pipeline_id = $order->get_meta('hubspot_pipeline_id') ?: get_option('hubspot_pipeline_online');
+        $pipeline_id = $order->get_meta('hubspot_pipeline_id');
+        if (!$pipeline_id) {
+            $pipeline_id = is_order_manual($order)
+                ? get_option('hubspot_pipeline_manual')
+                : get_option('hubspot_pipeline_online');
+        }
         $deal_stage = hubspot_get_cached_first_stage_of_pipeline($pipeline_id);
 
         if (empty($deal_stage)) {
