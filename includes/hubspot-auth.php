@@ -162,7 +162,7 @@ function manage_hubspot_access_token() {
 /**
  * Start HubSpot auth flow by redirecting to the authorization URL.
  */
-function steelmark_start_hubspot_auth(WP_REST_Request $request) {
+function start_hubspot_auth(WP_REST_Request $request) {
     global $hubspot_config;
 
     $nonce = $request->get_header('X-WP-Nonce');
@@ -194,7 +194,7 @@ function steelmark_start_hubspot_auth(WP_REST_Request $request) {
 /**
  * Handle the OAuth callback from HubSpot.
  */
-function steelmark_handle_oauth_callback(WP_REST_Request $request) {
+function handle_oauth_callback(WP_REST_Request $request) {
     global $wpdb, $hubspot_config;
     $table_name = $wpdb->prefix . "hubspot_tokens";
 
@@ -247,7 +247,7 @@ function steelmark_handle_oauth_callback(WP_REST_Request $request) {
 /**
  * Return stored token for admin view.
  */
-function steelmark_get_stored_token(WP_REST_Request $request) {
+function get_stored_token(WP_REST_Request $request) {
     global $wpdb;
     $table_name = $wpdb->prefix . "hubspot_tokens";
 
