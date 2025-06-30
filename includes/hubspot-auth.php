@@ -15,9 +15,7 @@ add_action('rest_api_init', function () {
     register_rest_route('hubspot/v1', '/oauth/callback', [
         'methods'             => 'GET',
         'callback'            => 'handle_oauth_callback',
-        'permission_callback' => function() {
-            return current_user_can('manage_options');
-        },
+        'permission_callback' => '__return_true',
     ]);
 
     if (defined('HUBSPOT_WC_DEBUG') && HUBSPOT_WC_DEBUG) {
@@ -182,10 +180,14 @@ function start_hubspot_auth(WP_REST_Request $request) {
         return new WP_REST_Response(['error' => 'Missing OAuth parameters in hubspot_config'], 400);
     }
 
+    $state = wp_generate_password(12, false);
+    update_option('hubspot_oauth_state', $state);
+
     $auth_url = "https://app-ap1.hubspot.com/oauth/authorize?" . http_build_query([
         'client_id'    => $hubspot_config['client_id'],
         'redirect_uri' => $hubspot_config['redirect_uri'],
         'scope'        => $hubspot_config['scopes'],
+        'state'        => $state,
     ]);
 
     error_log("[HubSpot OAuth] Redirecting to: " . $auth_url);
@@ -199,6 +201,13 @@ function start_hubspot_auth(WP_REST_Request $request) {
 function handle_oauth_callback(WP_REST_Request $request) {
     global $wpdb, $hubspot_config;
     $table_name = $wpdb->prefix . "hubspot_tokens";
+
+    $state        = sanitize_text_field($request->get_param('state'));
+    $stored_state = get_option('hubspot_oauth_state');
+    delete_option('hubspot_oauth_state');
+    if (!$state || $state !== $stored_state) {
+        return new WP_REST_Response(['error' => 'Invalid OAuth state'], 403);
+    }
 
     $code = $request->get_param('code');
     if (!$code) {
