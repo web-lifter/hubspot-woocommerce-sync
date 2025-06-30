@@ -7,26 +7,6 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
-// Set 'order_type' meta when a new order is created
-add_action('woocommerce_new_order', 'hubwoosync_set_order_type_for_online_orders', 20, 2);
-function hubwoosync_set_order_type_for_online_orders($order_id, $order) {
-    if (!is_a($order, 'WC_Order')) {
-        $order = wc_get_order($order_id);
-    }
-
-    $existing = $order->get_meta('order_type');
-    if (strtolower($existing) === 'manual') {
-        return; // Respect existing manual override
-    }
-
-    if (is_admin() || defined('REST_REQUEST') || php_sapi_name() === 'cli') {
-        $order->update_meta_data('order_type', 'manual');
-    } else {
-        $order->update_meta_data('order_type', 'online');
-    }
-
-    $order->save_meta_data();
-}
 
 // Register meta keys for HPOS compatibility
 add_filter('woocommerce_orders_table_meta_keys', function ($keys) {
