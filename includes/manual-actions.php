@@ -33,7 +33,7 @@ function hubwoosync_send_quote_email() {
  * Send invoice email and update HubSpot deal
  */
 add_action('wp_ajax_hubwoosync_send_invoice_email', 'hubwoosync_send_invoice_email');
-function ubwoosync_send_invoice_email() {
+function hubwoosync_send_invoice_email() {
     check_ajax_referer('send_invoice_email_nonce', 'security');
 
     if (! current_user_can('manage_woocommerce')) {
@@ -75,7 +75,7 @@ function ubwoosync_send_invoice_email() {
  * Manual sync of WooCommerce order from HubSpot deal
  */
 add_action('wp_ajax_hubwoosync_manual_sync_hubspot_order', 'hubwoosync_manual_sync_hubspot_order');
-function ubwoosync_manual_sync_hubspot_order() {
+function hubwoosync_manual_sync_hubspot_order() {
     check_ajax_referer('hubwoosync_manual_sync_hubspot_order_nonce', 'security');
 
     $order_id = absint($_POST['order_id']);
