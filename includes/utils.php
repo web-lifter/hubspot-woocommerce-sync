@@ -12,7 +12,16 @@ function hubwoosync_order_type( WC_Order $order ) {
  */
 function is_order_manual($order) {
     $order_type = $order->get_meta('order_type');
-    return $order_type === 'manual';
+
+    if ($order_type === 'manual') {
+        return true;
+    }
+
+    if (empty($order_type) && $order->get_created_via() === 'admin') {
+        return true;
+    }
+
+    return false;
 }
 
 function hubwoo_log( $message, $level = 'info' ) {
