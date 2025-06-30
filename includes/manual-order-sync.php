@@ -87,3 +87,28 @@ function hubwoosync_sync_payway_order_number_to_hubspot($order_id) {
         error_log("[HUBSPOT] ✅ PayWay order number '{$payway_order_number}' synced for Deal ID {$deal_id}");
     }
 }
+
+// Set manual pipeline/stage meta when a manual order is created
+add_action('woocommerce_new_order', 'hubwoosync_set_manual_pipeline_meta', 30, 2);
+function hubwoosync_set_manual_pipeline_meta($order_id, $order){
+    if (!is_a($order, 'WC_Order')) {
+        $order = wc_get_order($order_id);
+    }
+    if (!is_order_manual($order)) {
+        return;
+    }
+
+    if (!$order->get_meta('hubspot_pipeline_id')) {
+        $pipeline_id  = get_option('hubspot_pipeline_manual');
+        $labels       = get_hubspot_pipeline_and_stage_labels();
+        $status_key   = 'manual_wc-' . $order->get_status();
+        $mapping      = get_option('hubspot_status_stage_mapping', []);
+        $stage_id     = $mapping[$status_key] ?? hubspot_get_cached_first_stage_of_pipeline($pipeline_id);
+
+        $order->update_meta_data('hubspot_pipeline_id', $pipeline_id);
+        $order->update_meta_data('hubspot_pipeline', $labels['pipelines'][$pipeline_id] ?? $pipeline_id);
+        $order->update_meta_data('hubspot_dealstage_id', $stage_id);
+        $order->update_meta_data('hubspot_dealstage', $labels['stages'][$stage_id] ?? $stage_id);
+        $order->save_meta_data();
+    }
+}
