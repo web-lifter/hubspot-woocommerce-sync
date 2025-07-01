@@ -60,10 +60,10 @@ function hubwoosync_auto_sync_online_order($order_id) {
         return;
     }
 
-    $status = $order->get_status();
-    $status_key = "online_wc-{$status}";
-    $mapping = get_option('hubspot_status_stage_mapping', []);
-    $deal_stage = $mapping[$status_key] ?? '';
+    $status     = $order->get_status();
+    $status_key = 'online_wc-' . $status;
+    $mapping    = get_option('hubspot-online-mapping', []);
+    $deal_stage = $mapping[$status] ?? '';
 
     if (!$deal_stage) {
         $deal_stage = hubspot_get_first_stage_of_pipeline($pipeline_id, $access_token);

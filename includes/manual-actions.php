@@ -201,10 +201,11 @@ function hubwoosync_create_hubspot_deal_manual() {
         wp_send_json_error('Manual pipeline not configured.');
     }
 
-    $token = manage_hubspot_access_token();
-    $status_key = 'manual_wc-' . $order->get_status();
-    $mapping = get_option('hubspot_status_stage_mapping', []);
-    $stage_id = $mapping[$status_key] ?? hubspot_get_cached_first_stage_of_pipeline($pipeline_id);
+    $token      = manage_hubspot_access_token();
+    $status     = $order->get_status();
+    $status_key = 'manual_wc-' . $status;
+    $mapping    = get_option('hubspot-manual-mapping', []);
+    $stage_id   = $mapping[$status] ?? hubspot_get_cached_first_stage_of_pipeline($pipeline_id);
 
     $contact_id = hubspot_get_or_create_contact_id_from_order($order, $token);
     $deal_id = hubspot_create_deal_from_order($order, $pipeline_id, $stage_id, $contact_id, $token);
