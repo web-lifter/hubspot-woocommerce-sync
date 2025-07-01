@@ -26,13 +26,16 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
   * Line items as HubSpot products (with price, quantity, GST, SKU)
   * Deal notes from WooCommerce’s customer note field
   * PayWay transaction reference, if available
-  * Pipeline and stage mappings from WooCommerce order status
+  * Pipeline and stage mappings from WooCommerce order status. Each status can
+    be mapped separately for the **Online Orders Pipeline** and the
+    **Manual Orders Pipeline** using the `hubspot-online-mapping` and
+    `hubspot-manual-mapping` options.
 * **Automatic Order Completion**
   Online orders can be marked **complete** automatically when enabled in the **Orders** tab.
 * Order cleanup: automatically delete orders that remain in a chosen status (e.g., Pending Payment) for a specified number of days. These controls live in the **Orders** tab.
 
 * **Manual Deal Creation**
-  For unpaid or offline WooCommerce orders, admins can click **“Create Deal”** in the Order Management screen. This sends the order to a different pipeline (e.g., Manual/Quotes) with mappings tailored for manual flows.
+  For unpaid or offline WooCommerce orders, admins can click **“Create Deal”** in the Order Management screen. These orders are pushed to the pipeline chosen for manual sales (e.g., a Quotes pipeline) and use the stage mappings defined under **Manual Orders Pipeline**.
 
 * **Manual Order Sync from HubSpot Deal**
   Orders created manually in WooCommerce can be fully re-synced from their associated HubSpot deal using the **“Sync”** button. This updates:
@@ -125,9 +128,13 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
 1. **Go to WordPress Admin → HubSpot Sync**.
 2. Ensure the plugin's `variables.php` file contains your HubSpot **Client ID** and **Client Secret**.
 3. Click the **Connect HubSpot** button and follow the authorization flow.
-4. Once authenticated, choose your **HubSpot pipeline** for WooCommerce orders.
-5. Enable **Automatic Deal Creation** to sync new orders.
-6. In the **Orders** tab, enable **Auto-Complete Online Orders** to automatically mark paid orders complete.
+4. Once authenticated, select a **pipeline for online orders** and a separate
+   **pipeline for manual orders** under the **Pipelines** tab.
+5. Map each WooCommerce order status to a HubSpot stage for both pipelines using
+   the status table on that tab (stored in `hubspot-online-mapping` and
+   `hubspot-manual-mapping`).
+6. Enable **Automatic Deal Creation** to sync new orders.
+7. In the **Orders** tab, enable **Auto-Complete Online Orders** to automatically mark paid orders complete.
 
 ### Admin-Created Orders
 Orders created manually in WooCommerce are **not** synced automatically. After
