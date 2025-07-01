@@ -18,7 +18,10 @@ $options = [
     'hubspot_pipeline_online',
     'hubspot_pipeline_manual',
     'hubspot_pipeline_sync_enabled',
-    'hubspot_status_stage_mapping',
+    'hubspot-online-mapping',
+    'hubspot-manual-mapping',
+    'hubspot-online-deal-stages',
+    'hubspot-manual-deal-stages',
     'hubspot_stage_quote_sent_manual',
     'hubspot_stage_quote_sent_online',
     'hubspot_stage_quote_accepted_manual',
@@ -29,6 +32,7 @@ $options = [
     'hubspot_order_cleanup_status',
     'hubspot_order_cleanup_days',
     'hubspot_cached_pipelines',
+    'hubspot_oauth_state',
 ];
 
 foreach ($options as $option) {
