@@ -9,8 +9,17 @@ function sync_order_to_hubspot_deal_stage($order, $status_key, $log_prefix = '[H
         return;
     }
 
-    $mapping     = get_option('hubspot_status_stage_mapping', []);
-    $deal_stage  = $mapping[$status_key] ?? '';
+    if (strpos($status_key, 'online_wc-') === 0) {
+        $mapping = get_option('hubspot-online-mapping', []);
+        $status  = substr($status_key, strlen('online_wc-'));
+    } elseif (strpos($status_key, 'manual_wc-') === 0) {
+        $mapping = get_option('hubspot-manual-mapping', []);
+        $status  = substr($status_key, strlen('manual_wc-'));
+    } else {
+        $mapping = [];
+        $status  = $status_key;
+    }
+    $deal_stage  = $mapping[$status] ?? '';
     $order_id    = $order->get_id();
     $deal_id     = $order->get_meta('hubspot_deal_id');
 
@@ -103,18 +112,19 @@ function hubspot_get_first_stage_of_pipeline($pipeline_id, $access_token) {
  * Gets the first stage of a pipeline from cached settings (preferred)
  */
 function hubspot_get_cached_first_stage_of_pipeline($pipeline_id) {
-    $pipelines = get_option('hubspot_cached_pipelines', []);
+    $online_pipeline = get_option('hubspot_pipeline_online');
+    $manual_pipeline = get_option('hubspot_pipeline_manual');
 
-    if (!isset($pipelines[$pipeline_id]['stages'])) {
-        error_log("[HubSpot Sync] ⚠️ No cached stages found for pipeline '{$pipeline_id}'");
-        return '';
+    if ($pipeline_id === $manual_pipeline) {
+        $stages = get_option('hubspot-manual-deal-stages', []);
+    } else {
+        $stages = get_option('hubspot-online-deal-stages', []);
     }
 
-    $stages = $pipelines[$pipeline_id]['stages'];
     $first_stage = array_key_first($stages);
 
     if (!$first_stage) {
-        error_log("[HubSpot Sync] ⚠️ No stages found in cached pipeline '{$pipeline_id}'");
+        error_log("[HubSpot Sync] ⚠️ No stages found for pipeline '{$pipeline_id}'");
         return '';
     }
 

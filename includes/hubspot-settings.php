@@ -425,8 +425,15 @@ class HubSpot_WC_Settings {
         $order = wc_get_order($order_id);
         if (!$order) return;
 
+        $online_map = get_option('hubspot-online-mapping', []);
+        $manual_map = get_option('hubspot-manual-mapping', []);
+
         $is_manual = get_post_meta($order_id, 'order_type', true) === 'manual';
-        $status_key = ($is_manual ? 'manual_wc' : 'online_wc') . '-' . $new_status;
+        if ($is_manual || (!isset($online_map[$new_status]) && isset($manual_map[$new_status]))) {
+            $status_key = 'manual_wc-' . $new_status;
+        } else {
+            $status_key = 'online_wc-' . $new_status;
+        }
 
         if (function_exists('sync_order_to_hubspot_deal_stage')) {
             sync_order_to_hubspot_deal_stage($order, $status_key);

@@ -195,9 +195,10 @@ function hubwoo_ajax_import_order() {
     $order->save();
 
     // Sync HubSpot Deal
-    $status_key = 'manual_wc-' . $order->get_status();
-    $mapping = get_option('hubspot_status_stage_mapping', []);
-    $new_stage = $mapping[$status_key] ?? null;
+    $status    = $order->get_status();
+    $status_key = 'manual_wc-' . $status;
+    $mapping   = get_option('hubspot-manual-mapping', []);
+    $new_stage = $mapping[$status] ?? null;
 
     $payload = [
         'properties' => [
