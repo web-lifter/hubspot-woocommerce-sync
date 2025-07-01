@@ -27,13 +27,14 @@ class HubSpot_WC_Settings {
         register_setting('hubspot_wc_pipelines', 'hubspot_pipeline_sync_enabled', [
             'sanitize_callback' => [__CLASS__, 'sanitize_checkbox'],
         ]);
-        register_setting(
-            'hubspot_wc_pipelines',
-            'hubspot_status_stage_mapping',
-            [
-                'sanitize_callback' => [__CLASS__, 'sanitize_stage_mapping'],
-            ]
-        );
+        register_setting('hubspot_wc_pipelines','hubspot-online-deal-stages');
+        register_setting('hubspot_wc_pipelines','hubspot-manual-deal-stages');
+        register_setting('hubspot_wc_pipelines','hubspot-online-mapping', [
+            'sanitize_callback' => [__CLASS__, 'sanitize_online_mapping'],
+        ]);
+        register_setting('hubspot_wc_pipelines','hubspot-manual-mapping', [
+            'sanitize_callback' => [__CLASS__, 'sanitize_manual_mapping'],
+        ]);
         register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_sent_manual');
         register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_sent_online');
         register_setting('hubspot_wc_pipelines', 'hubspot_stage_quote_accepted_manual');
@@ -188,10 +189,11 @@ class HubSpot_WC_Settings {
         $online_pipeline  = get_option('hubspot_pipeline_online');
         $manual_pipeline  = get_option('hubspot_pipeline_manual');
         $sync_enabled     = get_option('hubspot_pipeline_sync_enabled');
-        $status_mapping   = get_option('hubspot_status_stage_mapping', []);
+        $online_map     = get_option('hubspot-online-mapping', []);
+        $manual_map     = get_option('hubspot-manual-mapping', []);
 
-        $online_stages = $pipelines[$online_pipeline]['stages'] ?? [];
-        $manual_stages = $pipelines[$manual_pipeline]['stages'] ?? [];
+        $online_stages = get_option('hubspot-online-deal-stages', $pipelines[$online_pipeline]['stages'] ?? []);
+        $manual_stages = get_option('hubspot-manual-deal-stages', $pipelines[$manual_pipeline]['stages'] ?? []);
 
         echo '<h3>' . esc_html__('HubSpot Pipelines Settings', 'hub-woo-sync') . '</h3>';
 
@@ -222,18 +224,16 @@ class HubSpot_WC_Settings {
         echo '<table class="widefat striped"><thead><tr><th>' . esc_html__('Status', 'hub-woo-sync') . '</th><th>' . esc_html__('Online Stage', 'hub-woo-sync') . '</th><th>' . esc_html__('Manual Stage', 'hub-woo-sync') . '</th></tr></thead><tbody>';
         foreach ($statuses as $slug => $label) {
             $status = substr($slug, 3); // remove wc-
-            $online_key = 'online_wc-' . $status;
-            $manual_key = 'manual_wc-' . $status;
-            $online_val = $status_mapping[$online_key] ?? '';
-            $manual_val = $status_mapping[$manual_key] ?? '';
+            $online_val = $online_map[$status] ?? '';
+            $manual_val = $manual_map[$status] ?? '';
             echo '<tr><td>' . esc_html($label) . '</td>';
-            echo '<td><select name="hubspot_status_stage_mapping[' . esc_attr($online_key) . ']">';
+            echo '<td><select name="hubspot-online-mapping[' . esc_attr($status) . ']">';
             echo '<option value="">' . esc_html__('Select Stage', 'hub-woo-sync') . '</option>';
             foreach ($online_stages as $sid => $slabel) {
                 echo '<option value="' . esc_attr($sid) . '"' . selected($online_val, $sid, false) . '>' . esc_html($slabel) . '</option>';
             }
             echo '</select></td>';
-            echo '<td><select name="hubspot_status_stage_mapping[' . esc_attr($manual_key) . ']">';
+            echo '<td><select name="hubspot-manual-mapping[' . esc_attr($status) . ']">';
             echo '<option value="">' . esc_html__('Select Stage', 'hub-woo-sync') . '</option>';
             foreach ($manual_stages as $sid => $slabel) {
                 echo '<option value="' . esc_attr($sid) . '"' . selected($manual_val, $sid, false) . '>' . esc_html($slabel) . '</option>';
@@ -455,6 +455,62 @@ class HubSpot_WC_Settings {
                 }
             } else {
                 unset($mapping[$key]);
+            }
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * Sanitize online mapping ensuring stages exist in hubspot-online-deal-stages.
+     */
+    public static function sanitize_online_mapping($mapping) {
+        if (!is_array($mapping)) {
+            $mapping = [];
+        }
+
+        $available = get_option('hubspot-online-deal-stages', []);
+
+        foreach ($mapping as $status => $stage_id) {
+            $stage_id = sanitize_text_field($stage_id);
+            if ($stage_id && !isset($available[$stage_id])) {
+                $mapping[$status] = '';
+                add_settings_error(
+                    'hubspot-online-mapping',
+                    'invalid_stage_' . $status,
+                    sprintf(__('Invalid stage selected for %s; value cleared.', 'hub-woo-sync'), esc_html($status)),
+                    'error'
+                );
+            } else {
+                $mapping[$status] = $stage_id;
+            }
+        }
+
+        return $mapping;
+    }
+
+    /**
+     * Sanitize manual mapping ensuring stages exist in hubspot-manual-deal-stages.
+     */
+    public static function sanitize_manual_mapping($mapping) {
+        if (!is_array($mapping)) {
+            $mapping = [];
+        }
+
+        $available = get_option('hubspot-manual-deal-stages', []);
+
+        foreach ($mapping as $status => $stage_id) {
+            $stage_id = sanitize_text_field($stage_id);
+            if ($stage_id && !isset($available[$stage_id])) {
+                $mapping[$status] = '';
+                add_settings_error(
+                    'hubspot-manual-mapping',
+                    'invalid_stage_' . $status,
+                    sprintf(__('Invalid stage selected for %s; value cleared.', 'hub-woo-sync'), esc_html($status)),
+                    'error'
+                );
+            } else {
+                $mapping[$status] = $stage_id;
             }
         }
 
