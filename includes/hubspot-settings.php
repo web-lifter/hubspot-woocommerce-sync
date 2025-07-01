@@ -22,8 +22,20 @@ class HubSpot_WC_Settings {
         ]);
 
         // Pipeline and stage mapping settings.
-        register_setting('hubspot_wc_pipelines', 'hubspot_pipeline_online');
-        register_setting('hubspot_wc_pipelines', 'hubspot_pipeline_manual');
+        register_setting(
+            'hubspot_wc_pipelines',
+            'hubspot_pipeline_online',
+            [
+                'sanitize_callback' => [__CLASS__, 'sanitize_pipeline_online'],
+            ]
+        );
+        register_setting(
+            'hubspot_wc_pipelines',
+            'hubspot_pipeline_manual',
+            [
+                'sanitize_callback' => [__CLASS__, 'sanitize_pipeline_manual'],
+            ]
+        );
         register_setting('hubspot_wc_pipelines', 'hubspot_pipeline_sync_enabled', [
             'sanitize_callback' => [__CLASS__, 'sanitize_checkbox'],
         ]);
@@ -318,6 +330,16 @@ class HubSpot_WC_Settings {
         $pipelines = self::get_hubspot_pipelines();
         if (!empty($pipelines)) {
             update_option('hubspot_cached_pipelines', $pipelines);
+
+            $online = get_option('hubspot_pipeline_online');
+            $manual = get_option('hubspot_pipeline_manual');
+
+            if ($online && isset($pipelines[$online]['stages'])) {
+                update_option('hubspot-online-deal-stages', array_keys($pipelines[$online]['stages']));
+            }
+            if ($manual && isset($pipelines[$manual]['stages'])) {
+                update_option('hubspot-manual-deal-stages', array_keys($pipelines[$manual]['stages']));
+            }
         }
     }
 
@@ -515,6 +537,28 @@ class HubSpot_WC_Settings {
         }
 
         return $mapping;
+    }
+
+    /**
+     * Sanitize the online pipeline option and refresh cache when changed.
+     */
+    public static function sanitize_pipeline_online($value) {
+        $value = sanitize_text_field($value);
+        if ($value !== get_option('hubspot_pipeline_online')) {
+            self::refresh_pipeline_cache();
+        }
+        return $value;
+    }
+
+    /**
+     * Sanitize the manual pipeline option and refresh cache when changed.
+     */
+    public static function sanitize_pipeline_manual($value) {
+        $value = sanitize_text_field($value);
+        if ($value !== get_option('hubspot_pipeline_manual')) {
+            self::refresh_pipeline_cache();
+        }
+        return $value;
     }
 
     /**
