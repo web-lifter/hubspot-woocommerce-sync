@@ -49,7 +49,6 @@ function sync_order_to_hubspot_deal_stage($order, $status_key, $log_prefix = '[H
         $status = substr($status, strlen('wc-'));
     }
 
-
     $deal_stage = $mapping[$status] ?? '';
 
     if (empty($deal_stage)) {
