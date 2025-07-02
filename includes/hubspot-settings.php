@@ -204,8 +204,8 @@ class HubSpot_WC_Settings {
         $online_map     = get_option('hubspot-online-mapping', []);
         $manual_map     = get_option('hubspot-manual-mapping', []);
 
-        $online_stages = get_option('hubspot-online-deal-stages', $pipelines[$online_pipeline]['stages'] ?? []);
-        $manual_stages = get_option('hubspot-manual-deal-stages', $pipelines[$manual_pipeline]['stages'] ?? []);
+        $online_stages = $pipelines[$online_pipeline]['stages'] ?? [];
+        $manual_stages = $pipelines[$manual_pipeline]['stages'] ?? [];
 
         echo '<h3>' . esc_html__('HubSpot Pipelines Settings', 'hub-woo-sync') . '</h3>';
 
