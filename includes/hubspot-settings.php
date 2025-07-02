@@ -335,10 +335,16 @@ class HubSpot_WC_Settings {
             $manual = get_option('hubspot_pipeline_manual');
 
             if ($online && isset($pipelines[$online]['stages'])) {
-                update_option('hubspot-online-deal-stages', array_keys($pipelines[$online]['stages']));
+                update_option(
+                    'hubspot-online-deal-stages',
+                    array_fill_keys(array_keys($pipelines[$online]['stages']), true)
+                );
             }
             if ($manual && isset($pipelines[$manual]['stages'])) {
-                update_option('hubspot-manual-deal-stages', array_keys($pipelines[$manual]['stages']));
+                update_option(
+                    'hubspot-manual-deal-stages',
+                    array_fill_keys(array_keys($pipelines[$manual]['stages']), true)
+                );
             }
         }
     }
