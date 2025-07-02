@@ -24,7 +24,7 @@ function send_quote($order_id) {
         'key'          => $order->get_order_key(),
     ], site_url('/'));
 
-    $subject = sprintf('[Steelmark Quote] Order #%s', $order->get_order_number());
+    $subject = sprintf('[Your Store Quote] Order #%s', $order->get_order_number());
 
     ob_start();
     wc_get_template('emails/email-header.php', [], '', get_stylesheet_directory() . '/woocommerce/');
@@ -40,9 +40,9 @@ function send_quote($order_id) {
     $headers = [
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset=UTF-8',
-        'From: Steelmark <website@steelmark.com.au>',
-        'Reply-To: website@steelmark.com.au',
-        'Return-Path: website@steelmark.com.au',
+        'From: Your Store <noreply@example.com>',
+        'Reply-To: noreply@example.com',
+        'Return-Path: noreply@example.com',
         'X-Mailer: PHP/' . phpversion(),
         'X-Priority: 3 (Normal)',
     ];
@@ -84,7 +84,7 @@ function send_invoice($order_id) {
     $order_key = $order->get_order_key();
     $payment_url = site_url("/checkout/order-pay/{$order_id}/?key={$order_key}");
 
-    $subject = sprintf('[Steelmark Invoice] Order #%s is ready for payment', $order->get_order_number());
+    $subject = sprintf('[Your Store Invoice] Order #%s is ready for payment', $order->get_order_number());
 
     ob_start();
     wc_get_template('emails/email-header.php', [], '', get_stylesheet_directory() . '/woocommerce/');
@@ -95,9 +95,9 @@ function send_invoice($order_id) {
     $headers = [
         'MIME-Version: 1.0',
         'Content-Type: text/html; charset=UTF-8',
-        'From: Steelmark <website@steelmark.com.au>',
-        'Reply-To: website@steelmark.com.au',
-        'Return-Path: website@steelmark.com.au',
+        'From: Your Store <noreply@example.com>',
+        'Reply-To: noreply@example.com',
+        'Return-Path: noreply@example.com',
         'X-Mailer: PHP/' . phpversion(),
         'X-Priority: 3 (Normal)'
     ];

@@ -118,15 +118,23 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
 2. Upload the `.zip` file to WordPress via **Plugins → Add New → Upload Plugin**.
 3. Activate the plugin.
 
+
 ### Using GitHub Updater
 1. Install the [GitHub Updater](https://github.com/afragen/github-updater) plugin.
 2. Add the repository URL in the GitHub Updater settings.
 3. The plugin will now receive updates directly from GitHub.
 
+## Creating a Private HubSpot App
+
+1. Sign in to the [HubSpot Developer Portal](https://developers.hubspot.com/).
+2. Create a **Private App** and note the generated **Client ID** and **Client Secret**.
+3. Add your site's OAuth **Redirect URI** (usually `https://yoursite.com/wp-json/hubspot/v1/oauth/callback`).
+4. Copy these values into the plugin's `variables.php` file.
+
 ## Setup & Authentication
 
 1. **Go to WordPress Admin → HubSpot Sync**.
-2. Ensure the plugin's `variables.php` file contains your HubSpot **Client ID** and **Client Secret**.
+2. Ensure the plugin's `variables.php` file contains your HubSpot **Client ID**, **Client Secret**, and **Redirect URI** from your private app.
 3. Click the **Connect HubSpot** button and follow the authorization flow.
 4. Once authenticated, select a **pipeline for online orders** and a separate
    **pipeline for manual orders** under the **Pipelines** tab.
@@ -142,7 +150,7 @@ creating an order in the admin, go to **HubSpot → Order Management** and click
 the **Create Deal** button to push the order to HubSpot.
 
 ### HubSpot App Credentials
-Your HubSpot app's **Client ID** and **Client Secret** are loaded from the `variables.php` file in the plugin directory.
+Your HubSpot app's **Client ID**, **Client Secret**, and **Redirect URI** are loaded from the `variables.php` file in the plugin directory.
 
 ## REST API Endpoints
 
