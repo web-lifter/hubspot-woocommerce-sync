@@ -2,7 +2,7 @@
 /**
  * Manual HubSpot Sync Actions
  *
- * @package Steelmark
+ * @package HubSpotWooCommerceSync
  */
 
 if (!defined('ABSPATH')) exit;
