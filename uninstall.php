@@ -33,6 +33,7 @@ $options = [
     'hubspot_order_cleanup_days',
     'hubspot_cached_pipelines',
     'hubspot_oauth_state',
+    'hubspot_status_stage_mapping',
 ];
 
 foreach ($options as $option) {

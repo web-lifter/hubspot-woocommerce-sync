@@ -122,26 +122,8 @@ function hubwoo_activation() {
     require_once ABSPATH . 'wp-admin/includes/upgrade.php';
     dbDelta($sql);
 
-    // Migrate legacy stage mapping option to new mapping options
-    $legacy = get_option('hubspot_status_stage_mapping');
-    if ($legacy && is_array($legacy)) {
-        $online_map  = get_option('hubspot-online-mapping', []);
-        $manual_map  = get_option('hubspot-manual-mapping', []);
-
-        foreach ($legacy as $key => $stage_id) {
-            if (strpos($key, 'online_wc-') === 0) {
-                $status                = substr($key, strlen('online_wc-'));
-                $online_map[$status]   = $stage_id;
-            } elseif (strpos($key, 'manual_wc-') === 0) {
-                $status                = substr($key, strlen('manual_wc-'));
-                $manual_map[$status]   = $stage_id;
-            }
-        }
-
-        update_option('hubspot-online-mapping', $online_map);
-        update_option('hubspot-manual-mapping', $manual_map);
-        delete_option('hubspot_status_stage_mapping');
-    }
+    // Ensure legacy stage mapping is migrated to the new option names
+    hubwoo_migrate_legacy_stage_mapping();
 
     if (!wp_next_scheduled('hubspot_token_refresh_event')) {
         wp_schedule_event(time(), 'thirty_minutes', 'hubspot_token_refresh_event');
@@ -161,3 +143,31 @@ function hubwoo_deactivation() {
     wp_clear_scheduled_hook('hubspot_token_refresh_event');
     wp_clear_scheduled_hook('hubspot_order_cleanup_event');
 }
+
+/**
+ * Migrate legacy pipeline stage mapping option to new mapping options.
+ */
+function hubwoo_migrate_legacy_stage_mapping() {
+    $legacy = get_option('hubspot_status_stage_mapping');
+    if ($legacy && is_array($legacy)) {
+        $online_map = get_option('hubspot-online-mapping', []);
+        $manual_map = get_option('hubspot-manual-mapping', []);
+
+        foreach ($legacy as $key => $stage_id) {
+            if (strpos($key, 'online_wc-') === 0) {
+                $status              = substr($key, strlen('online_wc-'));
+                $online_map[$status] = $stage_id;
+            } elseif (strpos($key, 'manual_wc-') === 0) {
+                $status              = substr($key, strlen('manual_wc-'));
+                $manual_map[$status] = $stage_id;
+            }
+        }
+
+        update_option('hubspot-online-mapping', $online_map);
+        update_option('hubspot-manual-mapping', $manual_map);
+        delete_option('hubspot_status_stage_mapping');
+    }
+}
+
+// Trigger migration on each page load in case the plugin was updated without reactivation
+add_action('plugins_loaded', 'hubwoo_migrate_legacy_stage_mapping');
