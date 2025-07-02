@@ -149,19 +149,4 @@ function hubwoosync_create_line_item($name, $price, $quantity, $sku, $gst, $acce
     return $data['id'] ?? null;
 }
 
-// Automatically mark paid online orders as completed if enabled
-add_action('woocommerce_payment_complete', 'hubwoosync_autocomplete_online_order', 100);
-function hubwoosync_autocomplete_online_order($order_id) {
-    if (!get_option('hubspot_autocomplete_online_order')) {
-        return;
-    }
 
-    $order = wc_get_order($order_id);
-    if (!$order || $order->get_meta('order_type') !== 'online') {
-        return;
-    }
-
-    if ($order->has_status('processing')) {
-        $order->update_status('completed', __('Automatically completed', 'hub-woo-sync'));
-    }
-}

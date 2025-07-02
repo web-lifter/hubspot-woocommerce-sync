@@ -8,7 +8,7 @@ class HubSpot_WC_Settings {
     public static function init() {
         add_action('admin_menu', [__CLASS__, 'register_menu']);
         add_action('admin_init', [__CLASS__, 'register_settings']);
-        add_action('admin_init', [__CLASS__, 'maybe_refresh_cache_on_save']);
+        add_action('admin_init', [__CLASS__, 'refresh_cache_on_save']);
 
         add_action('wp_ajax_hubspot_check_connection', [__CLASS__, 'hubspot_check_connection']);
         add_action('woocommerce_order_status_changed', [__CLASS__, 'handle_order_status_change'], 10, 3);
@@ -106,44 +106,55 @@ class HubSpot_WC_Settings {
 
     public static function render_settings_page() {
         $active_tab = $_GET['tab'] ?? 'authentication';
-        ?>
-        <div class="wrap">
-            <h1><?php esc_html_e('HubSpot WooCommerce Sync', 'hub-woo-sync'); ?></h1>
-            <h2 class="nav-tab-wrapper">
-                <a href="?page=hubspot-woocommerce-sync&tab=authentication" class="nav-tab <?php echo self::get_active_tab('authentication'); ?>"><?php esc_html_e('HubSpot Setup', 'hub-woo-sync'); ?></a>
-                <a href="?page=hubspot-woocommerce-sync&tab=woocommerce" class="nav-tab <?php echo self::get_active_tab('woocommerce'); ?>"><?php esc_html_e('Pipelines', 'hub-woo-sync'); ?></a>
-                <a href="?page=hubspot-woocommerce-sync&tab=orders" class="nav-tab <?php echo self::get_active_tab('orders'); ?>"><?php esc_html_e('Orders', 'hub-woo-sync'); ?></a>
-            </h2>
 
-            <?php
-            $option_group = 'hubspot_wc_auth';
-            if ($active_tab === 'woocommerce') {
-                $option_group = 'hubspot_wc_pipelines';
-            } elseif ($active_tab === 'orders') {
-                $option_group = 'hubspot_wc_orders';
+        echo '<div class="wrap">';
+        echo '<h1>' . esc_html__('HubSpot WooCommerce Sync', 'hub-woo-sync') . '</h1>';
+
+        echo '<h2 class="nav-tab-wrapper">';
+        echo '<a href="?page=hubspot-woocommerce-sync&tab=authentication" class="nav-tab ' . self::get_active_tab('authentication') . '">' . esc_html__('HubSpot Setup', 'hub-woo-sync') . '</a>';
+        echo '<a href="?page=hubspot-woocommerce-sync&tab=woocommerce" class="nav-tab ' . self::get_active_tab('woocommerce') . '">' . esc_html__('Pipelines', 'hub-woo-sync') . '</a>';
+        echo '<a href="?page=hubspot-woocommerce-sync&tab=orders" class="nav-tab ' . self::get_active_tab('orders') . '">' . esc_html__('Orders', 'hub-woo-sync') . '</a>';
+        echo '</h2>';
+
+        $option_group = 'hubspot_wc_auth';
+
+        // ⛑ Auto-refresh deal stages if cache is missing
+        if ($active_tab === 'woocommerce') {
+            $option_group = 'hubspot_wc_pipelines';
+            $online = get_option('hubspot_pipeline_online');
+            $manual = get_option('hubspot_pipeline_manual');
+            if ($online && empty(get_option('hubspot-online-deal-stages'))) {
+                self::refresh_pipeline_cache();
             }
-            ?>
+            if ($manual && empty(get_option('hubspot-manual-deal-stages'))) {
+                self::refresh_pipeline_cache();
+            }
+        } elseif ($active_tab === 'orders') {
+            $option_group = 'hubspot_wc_orders';
+        }
 
-            <form method="post" action="options.php">
-                <?php
-                settings_fields($option_group);
-                do_settings_sections($option_group);
+        // ⚠️ Show any sanitization or validation errors
+        settings_errors();
 
-                if ($active_tab === 'authentication') {
-                    self::render_authentication_settings();
-                } elseif ($active_tab === 'woocommerce') {
-                    self::render_woocommerce_settings();
-                } elseif ($active_tab === 'orders') {
-                    self::render_orders_settings();
-                }
-                submit_button();
-                if ($active_tab === 'woocommerce') {
-                    echo '<button class="button" name="hubspot_refresh_pipelines" value="1">' . esc_html__('Sync', 'hub-woo-sync') . '</button>';
-                }
-                ?>
-            </form>
-        </div>
-        <?php
+        echo '<form method="post" action="options.php">';
+        settings_fields($option_group);
+        do_settings_sections($option_group);
+
+        if ($active_tab === 'authentication') {
+            self::render_authentication_settings();
+        } elseif ($active_tab === 'woocommerce') {
+            self::render_woocommerce_settings();
+        } elseif ($active_tab === 'orders') {
+            self::render_orders_settings();
+        }
+
+        submit_button();
+
+        if ($active_tab === 'woocommerce') {
+            echo '<button class="button" name="hubspot_refresh_pipelines" value="1">' . esc_html__('Sync', 'hub-woo-sync') . '</button>';
+        }
+
+        echo '</form></div>';
     }
 
     private static function render_authentication_settings() {
@@ -308,7 +319,7 @@ class HubSpot_WC_Settings {
         return ($_GET['tab'] ?? 'authentication') === $tab ? 'nav-tab-active' : '';
     }
 
-    public static function maybe_refresh_cache_on_save() {
+    public static function refresh_cache_on_save() {
         if (!empty($_POST['hubspot_refresh_pipelines'])) {
             self::refresh_pipeline_cache();
             set_transient('hubspot_pipelines_synced', 1, 30);
@@ -316,10 +327,10 @@ class HubSpot_WC_Settings {
             self::refresh_pipeline_cache();
         }
 
-        add_action('admin_notices', [__CLASS__, 'maybe_display_sync_notice']);
+        add_action('admin_notices', [__CLASS__, 'display_sync_notice']);
     }
 
-    public static function maybe_display_sync_notice() {
+    public static function display_sync_notice() {
         if (get_transient('hubspot_pipelines_synced')) {
             echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('HubSpot pipelines refreshed.', 'hub-woo-sync') . '</p></div>';
             delete_transient('hubspot_pipelines_synced');
@@ -497,60 +508,61 @@ class HubSpot_WC_Settings {
     }
 
     /**
-     * Sanitize online mapping ensuring stages exist in hubspot-online-deal-stages.
+     * Sanitize online mapping with improved fallback logic
      */
     public static function sanitize_online_mapping($mapping) {
         if (!is_array($mapping)) {
             $mapping = [];
         }
 
-        $available = get_option('hubspot-online-deal-stages', []);
+        // Normalize keys to strings to avoid key type mismatch
+        $available_raw = get_option('hubspot-online-deal-stages', []);
+        $available = array_fill_keys(array_map('strval', array_keys($available_raw)), true);
 
         foreach ($mapping as $status => $stage_id) {
             $stage_id = sanitize_text_field($stage_id);
             if ($stage_id && !isset($available[$stage_id])) {
-                $mapping[$status] = '';
                 add_settings_error(
                     'hubspot-online-mapping',
                     'invalid_stage_' . $status,
-                    sprintf(__('Invalid stage selected for %s; value cleared.', 'hub-woo-sync'), esc_html($status)),
-                    'error'
+                    sprintf(__('Stage "%s" not found in available online deal stages — value retained for review.', 'hub-woo-sync'), esc_html($stage_id)),
+                    'warning'
                 );
-            } else {
-                $mapping[$status] = $stage_id;
             }
+            $mapping[$status] = $stage_id;
         }
 
         return $mapping;
     }
 
+
     /**
-     * Sanitize manual mapping ensuring stages exist in hubspot-manual-deal-stages.
+     * Sanitize manual mapping with improved fallback logic
      */
     public static function sanitize_manual_mapping($mapping) {
         if (!is_array($mapping)) {
             $mapping = [];
         }
 
-        $available = get_option('hubspot-manual-deal-stages', []);
+        $available_raw = get_option('hubspot-manual-deal-stages', []);
+        $available = array_fill_keys(array_map('strval', array_keys($available_raw)), true);
 
         foreach ($mapping as $status => $stage_id) {
             $stage_id = sanitize_text_field($stage_id);
             if ($stage_id && !isset($available[$stage_id])) {
-                $mapping[$status] = '';
                 add_settings_error(
                     'hubspot-manual-mapping',
                     'invalid_stage_' . $status,
-                    sprintf(__('Invalid stage selected for %s; value cleared.', 'hub-woo-sync'), esc_html($status)),
-                    'error'
+                    sprintf(__('Stage "%s" not found in available manual deal stages — value retained for review.', 'hub-woo-sync'), esc_html($stage_id)),
+                    'warning'
                 );
-            } else {
-                $mapping[$status] = $stage_id;
             }
+            $mapping[$status] = $stage_id;
         }
 
         return $mapping;
     }
+
 
     /**
      * Sanitize the online pipeline option and refresh cache when changed.
