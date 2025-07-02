@@ -9,23 +9,60 @@ function sync_order_to_hubspot_deal_stage($order, $status_key, $log_prefix = '[H
         return;
     }
 
-    if (strpos($status_key, 'online_wc-') === 0) {
-        $mapping = get_option('hubspot-online-mapping', []);
-        $status  = substr($status_key, strlen('online_wc-'));
-    } elseif (strpos($status_key, 'manual_wc-') === 0) {
-        $mapping = get_option('hubspot-manual-mapping', []);
-        $status  = substr($status_key, strlen('manual_wc-'));
-    } else {
-        $mapping = [];
-        $status  = $status_key;
+    $order_id   = $order->get_id();
+    $deal_id    = $order->get_meta('hubspot_deal_id');
+    $order_type = strtolower($order->get_meta('order_type'));
+
+    // Fallback in case meta is missing
+    if (empty($order_type)) {
+        $order_type = strtolower(get_post_meta($order_id, 'order_type', true));
     }
-    $deal_stage  = $mapping[$status] ?? '';
-    $order_id    = $order->get_id();
-    $deal_id     = $order->get_meta('hubspot_deal_id');
 
     if (!$deal_id || !is_numeric($deal_id)) {
         error_log("{$log_prefix} ❌ Invalid or missing deal ID for order #{$order_id}.");
         return;
+    }
+
+    // Load correct mapping based on order_type
+    if ($order_type === 'manual') {
+        $mapping = get_option('hubspot-manual-mapping', []);
+        $pipeline_id = get_option('hubspot_pipeline_manual');
+        $deal_stages = get_option('hubspot-manual-deal-stages', []);
+    } elseif ($order_type === 'online') {
+        $mapping = get_option('hubspot-online-mapping', []);
+        $pipeline_id = get_option('hubspot_pipeline_online');
+        $deal_stages = get_option('hubspot-online-deal-stages', []);
+    } else {
+        error_log("{$log_prefix} ⚠️ Unknown or missing order_type '{$order_type}' on order #{$order_id}.");
+        $mapping = [];
+        $pipeline_id = get_option('hubspot_pipeline_online');
+        $deal_stages = get_option('hubspot-online-deal-stages', []);
+    }
+
+    // Normalize WooCommerce status (e.g. wc-completed → completed)
+    $status = $status_key;
+    if (strpos($status, 'online_wc-') === 0) {
+        $status = substr($status, strlen('online_wc-'));
+    } elseif (strpos($status, 'manual_wc-') === 0) {
+        $status = substr($status, strlen('manual_wc-'));
+    } elseif (strpos($status, 'wc-') === 0) {
+        $status = substr($status, strlen('wc-'));
+    }
+
+
+    $deal_stage = $mapping[$status] ?? '';
+
+    if (empty($deal_stage)) {
+        error_log("{$log_prefix} ℹ️ No mapped stage for status '{$status}', attempting fallback.");
+
+        $deal_stage = array_key_first($deal_stages);
+
+        if (!$deal_stage) {
+            error_log("{$log_prefix} ⚠️ No deal stages available for pipeline '{$pipeline_id}' — cannot sync.");
+            return;
+        }
+
+        error_log("{$log_prefix} ⚠️ Using fallback first stage '{$deal_stage}' from pipeline '{$pipeline_id}'");
     }
 
     $access_token = manage_hubspot_access_token();
@@ -34,24 +71,7 @@ function sync_order_to_hubspot_deal_stage($order, $status_key, $log_prefix = '[H
         return;
     }
 
-    if (empty($deal_stage)) {
-        // Try to fallback to first stage of pipeline
-        $pipeline_id = $order->get_meta('hubspot_pipeline_id');
-        if (!$pipeline_id) {
-            $pipeline_id = is_order_manual($order)
-                ? get_option('hubspot_pipeline_manual')
-                : get_option('hubspot_pipeline_online');
-        }
-        $deal_stage = hubspot_get_cached_first_stage_of_pipeline($pipeline_id);
-
-        if (empty($deal_stage)) {
-            error_log("{$log_prefix} ⚠️ No stage found for key '{$status_key}', and fallback failed.");
-            return;
-        }
-
-        error_log("{$log_prefix} ⚠️ Using fallback first stage '{$deal_stage}' from pipeline '{$pipeline_id}'");
-    }
-
+    // Send PATCH to HubSpot
     $update_url = "https://api.hubapi.com/crm/v3/objects/deals/{$deal_id}";
     $update_payload = [
         'properties' => [
@@ -93,13 +113,13 @@ function sync_order_to_hubspot_deal_stage($order, $status_key, $log_prefix = '[H
 
 
 /**
- * Gets the first stage of a pipeline via live API call (deprecated fallback)
+ * Gets the first stage of a pipeline via live API call (deprecated)
  */
 function hubspot_get_first_stage_of_pipeline($pipeline_id, $access_token) {
     $url = "https://api.hubapi.com/crm/v3/pipelines/deals/{$pipeline_id}";
     $response = wp_remote_get($url, [
         'headers' => [
-            'Authorization' => "Bearer $access_token",
+            'Authorization' => "Bearer {$access_token}",
             'Content-Type'  => 'application/json'
         ]
     ]);
@@ -108,12 +128,13 @@ function hubspot_get_first_stage_of_pipeline($pipeline_id, $access_token) {
     return $data['stages'][0]['id'] ?? '';
 }
 
+
 /**
  * Gets the first stage of a pipeline from cached settings (preferred)
  */
 function hubspot_get_cached_first_stage_of_pipeline($pipeline_id) {
-    $online_pipeline = get_option('hubspot_pipeline_online');
     $manual_pipeline = get_option('hubspot_pipeline_manual');
+    $online_pipeline = get_option('hubspot_pipeline_online');
 
     if ($pipeline_id === $manual_pipeline) {
         $stages = get_option('hubspot-manual-deal-stages', []);

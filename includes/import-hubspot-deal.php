@@ -179,14 +179,25 @@ function hubwoo_ajax_import_order() {
 
     $order->calculate_totals();
 
-    // Meta
-    $order->update_meta_data('hubspot_deal_id', $deal_id);
-    $order->update_meta_data('hubspot_pipeline_id', $pipeline_id);
-    $order->update_meta_data('hubspot_pipeline', $pipeline_label);
-    $order->update_meta_data('hubspot_dealstage_id', $stage_id);
-    $order->update_meta_data('hubspot_dealstage', $stage_label);
+    // Override pipeline and stage to manual settings
+    $manual_pipeline_id = get_option('hubspot_pipeline_manual');
+    $labels = get_option('hubspot_cached_pipelines', []);
+    $manual_stage_map = get_option('hubspot-manual-mapping', []);
+    $deal_status = $order->get_status();
+
+    $manual_stage_id = $manual_stage_map[$deal_status] ?? hubspot_get_cached_first_stage_of_pipeline($manual_pipeline_id);
+    $manual_stage_label = $labels[$manual_pipeline_id]['stages'][$manual_stage_id] ?? $manual_stage_id;
+
+    $order->update_meta_data('hubspot_pipeline_id', $manual_pipeline_id);
+    $order->update_meta_data('hubspot_pipeline', $labels[$manual_pipeline_id]['label'] ?? $manual_pipeline_id);
+    $order->update_meta_data('hubspot_dealstage_id', $manual_stage_id);
+    $order->update_meta_data('hubspot_dealstage', $manual_stage_label);
     $order->update_meta_data('order_type', 'manual');
+
+    $order->update_meta_data('hubspot_deal_id', $deal_id);
     $order->save_meta_data();
+
+
 
     if (!empty($deal['deal_notes'])) {
         $order->set_customer_note($deal['deal_notes']);
@@ -221,7 +232,7 @@ function hubwoo_ajax_import_order() {
         hubwoo_log("❌ Failed to PATCH HubSpot deal ID {$deal_id}: " . $res->get_error_message());
     }
 
-    $order->add_order_note(sprintf('Imported from HubSpot. Pipeline: %s | Stage: %s', $pipeline_label ?: $pipeline_id, $stage_label ?: $stage_id));
+    $order->add_order_note(sprintf('Imported from HubSpot. Pipeline: %s | Stage: %s', $order->get_meta('hubspot_pipeline'), $order->get_meta('hubspot_dealstage')));
 
     wp_send_json_success([
         'redirect_url' => admin_url("post.php?post={$order->get_id()}&action=edit"),
