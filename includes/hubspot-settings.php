@@ -67,6 +67,33 @@ class HubSpot_WC_Settings {
         register_setting('hubspot_wc_properties', 'hubspot_properties_companies');
         register_setting('hubspot_wc_properties', 'hubspot_properties_products');
         register_setting('hubspot_wc_properties', 'hubspot_properties_line_items');
+
+        // Field mapping options for each object type
+        register_setting(
+            'hubspot_wc_properties',
+            'hubspot_deal_field_map',
+            [ 'sanitize_callback' => [__CLASS__, 'sanitize_field_map'] ]
+        );
+        register_setting(
+            'hubspot_wc_properties',
+            'hubspot_contact_field_map',
+            [ 'sanitize_callback' => [__CLASS__, 'sanitize_field_map'] ]
+        );
+        register_setting(
+            'hubspot_wc_properties',
+            'hubspot_company_field_map',
+            [ 'sanitize_callback' => [__CLASS__, 'sanitize_field_map'] ]
+        );
+        register_setting(
+            'hubspot_wc_properties',
+            'hubspot_product_field_map',
+            [ 'sanitize_callback' => [__CLASS__, 'sanitize_field_map'] ]
+        );
+        register_setting(
+            'hubspot_wc_properties',
+            'hubspot_line_item_field_map',
+            [ 'sanitize_callback' => [__CLASS__, 'sanitize_field_map'] ]
+        );
     }
 
     /**
@@ -330,20 +357,87 @@ class HubSpot_WC_Settings {
     }
 
     private static function render_properties_settings() {
-        $counts = [
-            'deals'      => count(get_option('hubspot_properties_deals', [])),
-            'contacts'   => count(get_option('hubspot_properties_contacts', [])),
-            'companies'  => count(get_option('hubspot_properties_companies', [])),
-            'products'   => count(get_option('hubspot_properties_products', [])),
-            'line_items' => count(get_option('hubspot_properties_line_items', [])),
+        $objects = [
+            'deals'      => __('Deal Field Mappings', 'hub-woo-sync'),
+            'contacts'   => __('Contact Field Mappings', 'hub-woo-sync'),
+            'companies'  => __('Company Field Mappings', 'hub-woo-sync'),
+            'products'   => __('Product Field Mappings', 'hub-woo-sync'),
+            'line_items' => __('Line Item Field Mappings', 'hub-woo-sync'),
         ];
 
-        echo '<h3>' . esc_html__('Cached HubSpot Properties', 'hub-woo-sync') . '</h3>';
-        echo '<ul>';
-        foreach ($counts as $object => $count) {
-            echo '<li>' . esc_html(ucfirst(str_replace('_', ' ', $object))) . ': ' . intval($count) . '</li>';
+        foreach ($objects as $object => $heading) {
+            $option     = 'hubspot_' . rtrim($object, 's') . '_field_map';
+            $properties = get_option('hubspot_properties_' . $object, []);
+            $mapping    = get_option($option, []);
+
+            echo '<h4>' . esc_html($heading) . '</h4>';
+            echo '<table class="widefat striped hubwoo-map-table" data-object="' . esc_attr($object) . '"><thead><tr><th>' . esc_html__('HubSpot Property', 'hub-woo-sync') . '</th><th>' . esc_html__('WooCommerce Field', 'hub-woo-sync') . '</th></tr></thead><tbody>';
+
+            if (empty($mapping)) {
+                $mapping = [['property' => '', 'field' => '', 'meta' => '']];
+            } else {
+                $tmp = [];
+                foreach ($mapping as $prop => $info) {
+                    $tmp[] = [
+                        'property' => $prop,
+                        'field'    => $info['field'] ?? '',
+                        'meta'     => $info['meta'] ?? '',
+                    ];
+                }
+                $mapping = $tmp;
+            }
+
+            $woo_fields = self::get_woo_fields($object);
+
+            foreach ($mapping as $row) {
+                $hs_prop = $row['property'];
+                $woo_val = $row['field'];
+                $meta    = $row['meta'];
+
+                echo '<tr><td><select class="hubwoo-hs-select hubwoo-select2" name="' . esc_attr($option) . '[property][]">';
+                echo '<option value="">' . esc_html__('Select Property', 'hub-woo-sync') . '</option>';
+                foreach ($properties as $name => $data) {
+                    $label = is_array($data) ? ($data['label'] ?? $name) : $name;
+                    echo '<option value="' . esc_attr($name) . '"' . selected($hs_prop, $name, false) . '>' . esc_html($label) . '</option>';
+                }
+                echo '</select></td><td>';
+
+                echo '<select class="hubwoo-woo-field hubwoo-select2" name="' . esc_attr($option) . '[field][]">';
+                echo '<option value="">' . esc_html__('Select Field', 'hub-woo-sync') . '</option>';
+                foreach ($woo_fields as $key => $label) {
+                    echo '<option value="' . esc_attr($key) . '"' . selected($woo_val, $key, false) . '>' . esc_html($label) . '</option>';
+                }
+                echo '</select>';
+                echo ' <input type="text" class="hubwoo-meta-key" name="' . esc_attr($option) . '[meta][]" value="' . esc_attr($meta) . '" placeholder="' . esc_attr__('Meta key', 'hub-woo-sync') . '"' . ($woo_val === 'meta' ? '' : ' style="display:none;"') . ' />';
+                echo '</td></tr>';
+            }
+
+            echo '</tbody></table>';
+            echo '<p><button type="button" class="button add-mapping" data-object="' . esc_attr($object) . '">' . esc_html__('Add Mapping', 'hub-woo-sync') . '</button></p>';
         }
-        echo '</ul>';
+
+        echo '<script>
+        jQuery(function($){
+            function applySelect(scope){
+                if($.fn.selectWoo){ $(scope).find(".hubwoo-select2").selectWoo(); }
+                else if($.fn.select2){ $(scope).find(".hubwoo-select2").select2(); }
+            }
+            $(".hubwoo-map-table").each(function(){ applySelect(this); });
+            $(document).on("change", ".hubwoo-woo-field", function(){
+                var row = $(this).closest("tr");
+                if($(this).val()==="meta"){ row.find(".hubwoo-meta-key").show(); } else { row.find(".hubwoo-meta-key").hide(); }
+            }).trigger("change");
+            $(".add-mapping").on("click", function(){
+                var obj = $(this).data("object");
+                var table = $(".hubwoo-map-table[data-object="+obj+"] tbody");
+                var row = table.find("tr:last").clone();
+                row.find("select").val("");
+                row.find(".hubwoo-meta-key").val("").hide();
+                table.append(row);
+                applySelect(row);
+            });
+        });
+        </script>';
     }
 
     public static function get_active_tab($tab) {
@@ -609,6 +703,75 @@ class HubSpot_WC_Settings {
         }
 
         return $mapping;
+    }
+
+    /**
+     * Sanitize property → WooCommerce field mapping arrays.
+     */
+    public static function sanitize_field_map($input) {
+        $output = [];
+        $props  = $input['property'] ?? [];
+        $fields = $input['field'] ?? [];
+        $metas  = $input['meta'] ?? [];
+
+        $count = max(count($props), count($fields));
+
+        for ($i = 0; $i < $count; $i++) {
+            $prop  = sanitize_text_field($props[$i] ?? '');
+            $field = sanitize_text_field($fields[$i] ?? '');
+            $meta  = sanitize_text_field($metas[$i] ?? '');
+
+            if ($prop && $field) {
+                $output[$prop] = [
+                    'field' => $field,
+                    'meta'  => $field === 'meta' ? $meta : '',
+                ];
+            }
+        }
+
+        return $output;
+    }
+
+    /**
+     * Get list of WooCommerce fields for mapping.
+     */
+    private static function get_woo_fields($object) {
+        if ($object === 'products') {
+            return [
+                'name'             => __('Product Name', 'hub-woo-sync'),
+                'regular_price'    => __('Regular Price', 'hub-woo-sync'),
+                'sale_price'       => __('Sale Price', 'hub-woo-sync'),
+                'description'      => __('Description', 'hub-woo-sync'),
+                'short_description'=> __('Short Description', 'hub-woo-sync'),
+                'sku'              => __('SKU', 'hub-woo-sync'),
+                'meta'             => __('Custom Meta', 'hub-woo-sync'),
+            ];
+        }
+
+        return [
+            'billing_first_name'  => __('Billing First Name', 'hub-woo-sync'),
+            'billing_last_name'   => __('Billing Last Name', 'hub-woo-sync'),
+            'billing_email'       => __('Billing Email', 'hub-woo-sync'),
+            'billing_phone'       => __('Billing Phone', 'hub-woo-sync'),
+            'billing_company'     => __('Billing Company', 'hub-woo-sync'),
+            'billing_address_1'   => __('Billing Address 1', 'hub-woo-sync'),
+            'billing_address_2'   => __('Billing Address 2', 'hub-woo-sync'),
+            'billing_city'        => __('Billing City', 'hub-woo-sync'),
+            'billing_state'       => __('Billing State', 'hub-woo-sync'),
+            'billing_postcode'    => __('Billing Postcode', 'hub-woo-sync'),
+            'billing_country'     => __('Billing Country', 'hub-woo-sync'),
+            'shipping_first_name' => __('Shipping First Name', 'hub-woo-sync'),
+            'shipping_last_name'  => __('Shipping Last Name', 'hub-woo-sync'),
+            'shipping_company'    => __('Shipping Company', 'hub-woo-sync'),
+            'shipping_address_1'  => __('Shipping Address 1', 'hub-woo-sync'),
+            'shipping_address_2'  => __('Shipping Address 2', 'hub-woo-sync'),
+            'shipping_city'       => __('Shipping City', 'hub-woo-sync'),
+            'shipping_state'      => __('Shipping State', 'hub-woo-sync'),
+            'shipping_postcode'   => __('Shipping Postcode', 'hub-woo-sync'),
+            'shipping_country'    => __('Shipping Country', 'hub-woo-sync'),
+            'customer_note'       => __('Customer Note', 'hub-woo-sync'),
+            'meta'                => __('Custom Meta', 'hub-woo-sync'),
+        ];
     }
 
 
