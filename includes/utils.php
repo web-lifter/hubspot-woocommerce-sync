@@ -91,3 +91,52 @@ function hubwoo_get_object_field_value($object, $field) {
 
     return method_exists($object, 'get_meta') ? $object->get_meta($field, true) : '';
 }
+
+/**
+ * Set a value on a WooCommerce order using a generic field name.
+ * Falls back to order meta when no setter exists.
+ */
+function hubwoo_set_order_field_value($order, $field, $value) {
+    if (!$order) {
+        return;
+    }
+
+    if ($field === 'shipping_phone') {
+        // WooCommerce uses _shipping_phone meta field
+        $order->update_meta_data('_shipping_phone', $value);
+        return;
+    }
+
+    if (strpos($field, '_') === 0) {
+        $order->update_meta_data($field, $value);
+        return;
+    }
+
+    $method = 'set_' . $field;
+    if (method_exists($order, $method)) {
+        $order->$method($value);
+    } else {
+        $order->update_meta_data($field, $value);
+    }
+}
+
+/**
+ * Generic helper to set a value on a WooCommerce data object.
+ */
+function hubwoo_set_object_field_value($object, $field, $value) {
+    if (!$object) {
+        return;
+    }
+
+    if (strpos($field, '_') === 0 && method_exists($object, 'update_meta_data')) {
+        $object->update_meta_data($field, $value);
+        return;
+    }
+
+    $method = 'set_' . $field;
+    if (method_exists($object, $method)) {
+        $object->$method($value);
+    } elseif (method_exists($object, 'update_meta_data')) {
+        $object->update_meta_data($field, $value);
+    }
+}
