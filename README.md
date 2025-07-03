@@ -88,6 +88,8 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
 
 * **Stage & Pipeline Label Caching**
   Caches HubSpot pipeline and stage labels from the API to reduce repeated requests and provide readable names in the admin UI. Cached data lives in the `hubspot_cached_pipelines` option and can be refreshed from the **Pipelines** tab using the new **Sync** button.
+* **Property Caching**
+  Fetches and stores property definitions for HubSpot objects (deals, contacts, companies, products and line items). These are cached in options like `hubspot_properties_deals` and can be refreshed from the **Properties** tab.
 
 * **Robust Error Handling and Logging**
 

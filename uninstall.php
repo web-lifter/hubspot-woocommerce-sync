@@ -32,6 +32,11 @@ $options = [
     'hubspot_order_cleanup_status',
     'hubspot_order_cleanup_days',
     'hubspot_cached_pipelines',
+    'hubspot_properties_deals',
+    'hubspot_properties_contacts',
+    'hubspot_properties_companies',
+    'hubspot_properties_products',
+    'hubspot_properties_line_items',
     'hubspot_oauth_state',
     'hubspot_status_stage_mapping',
 ];
