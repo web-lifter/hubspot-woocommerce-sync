@@ -172,3 +172,49 @@ function hubwoo_migrate_legacy_stage_mapping() {
 
 // Trigger migration on each page load in case the plugin was updated without reactivation
 add_action('plugins_loaded', 'hubwoo_migrate_legacy_stage_mapping');
+
+/**
+ * Initialize default field mappings on first install or upgrade.
+ */
+function hubwoo_init_default_field_mappings() {
+    $deal_defaults = [
+        'shipping'                => 'shipping_total',
+        'deal_notes'              => 'customer_note',
+        'address_line_1'          => 'billing_address_1',
+        'city'                    => 'billing_city',
+        'postcode'                => 'billing_postcode',
+        'state'                   => 'billing_state',
+        'country_region'          => 'billing_country',
+        'address_line_1_shipping' => 'shipping_address_1',
+        'city_shipping'           => 'shipping_city',
+        'postcode_shipping'       => 'shipping_postcode',
+        'state_shipping'          => 'shipping_state',
+        'country_region_shipping' => 'shipping_country',
+        'first_name_shipping'     => 'shipping_first_name',
+        'last_name_shipping'      => 'shipping_last_name',
+        'payway_order_number'     => '_payway_api_order_number',
+        'phone_shipping'          => 'shipping_phone',
+    ];
+
+    $contact_defaults = [
+        'email'     => 'billing_email',
+        'firstname' => 'billing_first_name',
+        'lastname'  => 'billing_last_name',
+        'phone'     => 'billing_phone',
+    ];
+
+    $company_defaults = [
+        'name' => 'billing_company',
+    ];
+
+    if (!get_option('hubspot_deal_field_map')) {
+        update_option('hubspot_deal_field_map', $deal_defaults);
+    }
+    if (!get_option('hubspot_contact_field_map')) {
+        update_option('hubspot_contact_field_map', $contact_defaults);
+    }
+    if (!get_option('hubspot_company_field_map')) {
+        update_option('hubspot_company_field_map', $company_defaults);
+    }
+}
+add_action('plugins_loaded', 'hubwoo_init_default_field_mappings');
