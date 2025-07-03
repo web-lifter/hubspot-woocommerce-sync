@@ -98,21 +98,13 @@ function hubwoosync_manual_sync_hubspot_order() {
     foreach ($order->get_items('shipping') as $id => $item) $order->remove_item($id);
 
     $deal_map = get_option('hubspot_deal_field_map', []);
-    foreach ($deal_map as $prop => $field) {
-        if (isset($deal[$prop])) {
-            hubwoo_set_order_field_value($order, $field, $deal[$prop]);
-        }
-    }
+    hubwoosync_apply_deal_to_order($deal, $order, $deal_map);
 
     if (!empty($deal['contacts'])) {
         $contact = fetch_hubspot_contact($deal['contacts'][0]);
         if ($contact) {
             $contact_map = get_option('hubspot_contact_field_map', []);
-            foreach ($contact_map as $prop => $field) {
-                if (isset($contact[$prop])) {
-                    hubwoo_set_order_field_value($order, $field, $contact[$prop]);
-                }
-            }
+            hubwoosync_apply_deal_to_order($contact, $order, $contact_map);
         }
     }
 
@@ -146,11 +138,7 @@ function hubwoosync_manual_sync_hubspot_order() {
         $company = fetch_hubspot_company($deal['companies'][0]);
         if ($company) {
             $company_map = get_option('hubspot_company_field_map', []);
-            foreach ($company_map as $prop => $field) {
-                if (isset($company[$prop])) {
-                    hubwoo_set_order_field_value($order, $field, $company[$prop]);
-                }
-            }
+            hubwoosync_apply_deal_to_order($company, $order, $company_map);
         }
     }
 
