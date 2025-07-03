@@ -710,22 +710,29 @@ class HubSpot_WC_Settings {
      */
     public static function sanitize_field_map($input) {
         $output = [];
-        $props  = $input['property'] ?? [];
-        $fields = $input['field'] ?? [];
-        $metas  = $input['meta'] ?? [];
 
-        $count = max(count($props), count($fields));
+        // Support both legacy array format from the settings form and direct key => value arrays
+        if (isset($input['property'])) {
+            $props  = $input['property'] ?? [];
+            $fields = $input['field'] ?? [];
+            $count  = max(count($props), count($fields));
 
-        for ($i = 0; $i < $count; $i++) {
-            $prop  = sanitize_text_field($props[$i] ?? '');
-            $field = sanitize_text_field($fields[$i] ?? '');
-            $meta  = sanitize_text_field($metas[$i] ?? '');
+            for ($i = 0; $i < $count; $i++) {
+                $prop  = sanitize_text_field($props[$i] ?? '');
+                $field = sanitize_text_field($fields[$i] ?? '');
 
-            if ($prop && $field) {
-                $output[$prop] = [
-                    'field' => $field,
-                    'meta'  => $field === 'meta' ? $meta : '',
-                ];
+                if ($prop && $field) {
+                    $output[$prop] = $field;
+                }
+            }
+        } elseif (is_array($input)) {
+            foreach ($input as $prop => $field) {
+                $prop  = sanitize_text_field($prop);
+                $field = sanitize_text_field($field);
+
+                if ($prop && $field) {
+                    $output[$prop] = $field;
+                }
             }
         }
 
