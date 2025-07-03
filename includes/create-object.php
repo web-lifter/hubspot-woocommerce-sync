@@ -38,16 +38,21 @@ function hubspot_get_or_create_contact($order, $email, $access_token, &$error_ou
         return $data['results'][0]['id'];
     }
 
-    // Create new contact
+    // Create new contact dynamically from mapping
     $create_url = "https://api.hubapi.com/crm/v3/objects/contacts";
-    $create_payload = [
-        'properties' => [
-            'email'     => $email,
-            'firstname' => $order->get_billing_first_name(),
-            'lastname'  => $order->get_billing_last_name(),
-            'phone'     => $order->get_billing_phone()
-        ]
-    ];
+    $field_map   = get_option('hubspot_contact_field_map', []);
+    $properties  = [];
+
+    foreach ($field_map as $prop => $field) {
+        $properties[$prop] = hubwoo_get_order_field_value($order, $field);
+    }
+
+    // Ensure required email property is set
+    if (empty($properties['email'])) {
+        $properties['email'] = $email;
+    }
+
+    $create_payload = [ 'properties' => $properties ];
 
     $response = wp_remote_post($create_url, [
         'headers' => [
@@ -75,7 +80,7 @@ function hubspot_get_or_create_contact($order, $email, $access_token, &$error_ou
 /**
  * Get or create a HubSpot company.
  */
-function hubspot_get_or_create_company($name, $access_token, &$error_out = null) {
+function hubspot_get_or_create_company($order, $name, $access_token, &$error_out = null) {
     $search_url = "https://api.hubapi.com/crm/v3/objects/companies/search";
     $search_payload = [
         'filterGroups' => [[
@@ -106,9 +111,21 @@ function hubspot_get_or_create_company($name, $access_token, &$error_out = null)
         return $data['results'][0]['id'];
     }
 
-    // Create company
-    $create_url = "https://api.hubapi.com/crm/v3/objects/companies";
-    $create_payload = ['properties' => ['name' => $name]];
+    // Create company dynamically from mapping
+    $create_url  = "https://api.hubapi.com/crm/v3/objects/companies";
+    $field_map   = get_option('hubspot_company_field_map', []);
+    $properties  = [];
+
+    foreach ($field_map as $prop => $field) {
+        // For company creation we only have order context
+        $properties[$prop] = hubwoo_get_order_field_value($order, $field);
+    }
+
+    if (empty($properties['name'])) {
+        $properties['name'] = $name;
+    }
+
+    $create_payload = ['properties' => $properties];
 
     $response = wp_remote_post($create_url, [
         'headers' => [
@@ -142,16 +159,22 @@ function hubspot_create_deal_from_order($order, $pipeline_id, $deal_stage, $cont
         $deal_name .= ' - ' . $order->get_billing_first_name() . ' ' . $order->get_billing_last_name();
     }
 
-    // Step 1: create deal with only required fields
-    $create_payload = [
-        'properties' => [
-            'dealname'        => trim($deal_name),
-            'amount'          => floatval($order->get_total()),
-            'pipeline'        => $pipeline_id,
-            'dealstage'       => $deal_stage,
-            'online_order_id' => (string) $order->get_id()
-        ]
+    // Step 1: create deal with required fields and mapped properties
+    $properties = [
+        'dealname'        => trim($deal_name),
+        'amount'          => floatval($order->get_total()),
+        'pipeline'        => $pipeline_id,
+        'dealstage'       => $deal_stage,
+        'online_order_id' => (string) $order->get_id(),
     ];
+
+    $field_map = get_option('hubspot_deal_field_map', []);
+    foreach ($field_map as $prop => $field) {
+        if (isset($properties[$prop])) continue; // don't overwrite required fields
+        $properties[$prop] = hubwoo_get_order_field_value($order, $field);
+    }
+
+    $create_payload = [ 'properties' => $properties ];
 
     $response = wp_remote_post("https://api.hubapi.com/crm/v3/objects/deals", [
         'headers' => [
@@ -187,27 +210,12 @@ function hubspot_create_deal_from_order($order, $pipeline_id, $deal_stage, $cont
  * Patch optional deal fields to avoid creation failures.
  */
 function hubspot_patch_deal_optional_fields($deal_id, $order, $access_token) {
-    $state_map = [ 'ACT'=>'Australian Capital Territory','NSW'=>'New South Wales','NT'=>'Northern Territory','QLD'=>'Queensland','SA'=>'South Australia','TAS'=>'Tasmania','VIC'=>'Victoria','WA'=>'Western Australia' ];
-    $country_map = ['AU' => 'Australia'];
+    $field_map = get_option('hubspot_deal_field_map', []);
+    $fields    = [];
 
-    $fields = [
-        'shipping'                => floatval($order->get_shipping_total()),
-        'deal_notes'              => $order->get_customer_note(),
-        'address_line_1'          => $order->get_billing_address_1(),
-        'city'                    => $order->get_billing_city(),
-        'postcode'                => $order->get_billing_postcode(),
-        'state'                   => $state_map[$order->get_billing_state()] ?? $order->get_billing_state(),
-        'country_region'          => $country_map[$order->get_billing_country()] ?? $order->get_billing_country(),
-        'address_line_1_shipping' => $order->get_shipping_address_1(),
-        'city_shipping'           => $order->get_shipping_city(),
-        'postcode_shipping'       => $order->get_shipping_postcode(),
-        'state_shipping'          => $state_map[$order->get_shipping_state()] ?? $order->get_shipping_state(),
-        'country_region_shipping' => $country_map[$order->get_shipping_country()] ?? $order->get_shipping_country(),
-        'first_name_shipping'     => $order->get_shipping_first_name(),
-        'last_name_shipping'      => $order->get_shipping_last_name(),
-        'payway_order_number'     => $order->get_meta('_payway_api_order_number'),
-        'phone_shipping'          => $order->get_shipping_phone() ?: $order->get_billing_phone(),
-    ];
+    foreach ($field_map as $prop => $woo_field) {
+        $fields[$prop] = hubwoo_get_order_field_value($order, $woo_field);
+    }
 
     $patch_payload = ['properties' => $fields];
 

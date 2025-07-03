@@ -32,3 +32,62 @@ function hubwoo_log( $message, $level = 'info' ) {
         error_log( $message );
     }
 }
+/**
+ * Get a value from a WooCommerce order using a generic field name.
+ * If the field starts with an underscore, it is treated as order meta.
+ */
+function hubwoo_get_order_field_value($order, $field) {
+    if (!$order) return '';
+
+    $state_map = [
+        'ACT' => 'Australian Capital Territory',
+        'NSW' => 'New South Wales',
+        'NT'  => 'Northern Territory',
+        'QLD' => 'Queensland',
+        'SA'  => 'South Australia',
+        'TAS' => 'Tasmania',
+        'VIC' => 'Victoria',
+        'WA'  => 'Western Australia',
+    ];
+    $country_map = ['AU' => 'Australia'];
+
+    // Meta fields
+    if (strpos($field, '_') === 0) {
+        return $order->get_meta($field);
+    }
+
+    $method = 'get_' . $field;
+    if (method_exists($order, $method)) {
+        $value = $order->$method();
+    } else {
+        $value = $order->get_meta($field);
+    }
+
+    // Normalize state and country codes
+    if (in_array($field, ['billing_state', 'shipping_state'], true)) {
+        return $state_map[$value] ?? $value;
+    }
+    if (in_array($field, ['billing_country', 'shipping_country'], true)) {
+        return $country_map[$value] ?? $value;
+    }
+
+    return $value;
+}
+
+/**
+ * Generic helper to get a value from a WooCommerce data object (product, item).
+ */
+function hubwoo_get_object_field_value($object, $field) {
+    if (!$object) return '';
+
+    if (strpos($field, '_') === 0 && method_exists($object, 'get_meta')) {
+        return $object->get_meta($field, true);
+    }
+
+    $method = 'get_' . $field;
+    if (method_exists($object, $method)) {
+        return $object->$method();
+    }
+
+    return method_exists($object, 'get_meta') ? $object->get_meta($field, true) : '';
+}

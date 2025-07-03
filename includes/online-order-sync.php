@@ -50,7 +50,7 @@ function hubwoosync_auto_sync_online_order($order_id) {
     $company_id = null;
     $company_name = $order->get_billing_company();
     if (!empty($company_name)) {
-        $company_id = hubspot_get_or_create_company($company_name, $access_token);
+        $company_id = hubspot_get_or_create_company($order, $company_name, $access_token);
     }
 
     $pipeline_id = get_option('hubspot_pipeline_online');
@@ -115,7 +115,7 @@ function hubwoosync_add_line_items_to_deal($order, $deal_id, $access_token) {
         $sku = $item->get_product() ? $item->get_product()->get_sku() : '';
         $gst = round($item->get_total_tax(), 2);
 
-        $line_item_id = hubwoosync_create_line_item($name, $price, $qty, $sku, $gst, $access_token);
+        $line_item_id = hubwoosync_create_line_item($item, $price, $qty, $sku, $gst, $access_token);
         if ($line_item_id) {
             hubspot_associate_objects('deal', $deal_id, 'line_item', $line_item_id, $access_token);
         }
@@ -125,17 +125,29 @@ function hubwoosync_add_line_items_to_deal($order, $deal_id, $access_token) {
 /**
  * Create a HubSpot line item object
  */
-function hubwoosync_create_line_item($name, $price, $quantity, $sku, $gst, $access_token) {
-    $payload = [
-        'properties' => [
-            'name'     => $name,
-            'price'    => round($price, 2),
-            'quantity' => $quantity,
-            // Store WooCommerce SKU in the custom hs_sku property
-            'hs_sku'   => $sku,
-            'gst'      => $gst,
-        ],
+function hubwoosync_create_line_item($item, $price, $quantity, $sku, $gst, $access_token) {
+    $name     = $item->get_name();
+    $product  = $item->get_product();
+
+    $properties = [
+        'name'     => $name,
+        'price'    => round($price, 2),
+        'quantity' => $quantity,
+        'hs_sku'   => $sku,
+        'gst'      => $gst,
     ];
+
+    $line_item_map = get_option('hubspot_line_item_field_map', []);
+    foreach ($line_item_map as $prop => $field) {
+        $properties[$prop] = hubwoo_get_object_field_value($item, $field);
+    }
+
+    $product_map = get_option('hubspot_product_field_map', []);
+    foreach ($product_map as $prop => $field) {
+        $properties[$prop] = hubwoo_get_object_field_value($product, $field);
+    }
+
+    $payload = [ 'properties' => $properties ];
 
     $response = wp_remote_post('https://api.hubapi.com/crm/v3/objects/line_items', [
         'headers' => [
