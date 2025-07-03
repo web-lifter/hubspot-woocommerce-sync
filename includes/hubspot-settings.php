@@ -60,6 +60,13 @@ class HubSpot_WC_Settings {
         ]);
         register_setting('hubspot_wc_orders', 'hubspot_order_cleanup_status');
         register_setting('hubspot_wc_orders', 'hubspot_order_cleanup_days');
+
+        // Cached HubSpot property definitions
+        register_setting('hubspot_wc_properties', 'hubspot_properties_deals');
+        register_setting('hubspot_wc_properties', 'hubspot_properties_contacts');
+        register_setting('hubspot_wc_properties', 'hubspot_properties_companies');
+        register_setting('hubspot_wc_properties', 'hubspot_properties_products');
+        register_setting('hubspot_wc_properties', 'hubspot_properties_line_items');
     }
 
     /**
@@ -114,6 +121,7 @@ class HubSpot_WC_Settings {
         echo '<a href="?page=hubspot-woocommerce-sync&tab=authentication" class="nav-tab ' . self::get_active_tab('authentication') . '">' . esc_html__('HubSpot Setup', 'hub-woo-sync') . '</a>';
         echo '<a href="?page=hubspot-woocommerce-sync&tab=woocommerce" class="nav-tab ' . self::get_active_tab('woocommerce') . '">' . esc_html__('Pipelines', 'hub-woo-sync') . '</a>';
         echo '<a href="?page=hubspot-woocommerce-sync&tab=orders" class="nav-tab ' . self::get_active_tab('orders') . '">' . esc_html__('Orders', 'hub-woo-sync') . '</a>';
+        echo '<a href="?page=hubspot-woocommerce-sync&tab=properties" class="nav-tab ' . self::get_active_tab('properties') . '">' . esc_html__('Properties', 'hub-woo-sync') . '</a>';
         echo '</h2>';
 
         $option_group = 'hubspot_wc_auth';
@@ -131,6 +139,8 @@ class HubSpot_WC_Settings {
             }
         } elseif ($active_tab === 'orders') {
             $option_group = 'hubspot_wc_orders';
+        } elseif ($active_tab === 'properties') {
+            $option_group = 'hubspot_wc_properties';
         }
 
         // ⚠️ Show any sanitization or validation errors
@@ -146,12 +156,16 @@ class HubSpot_WC_Settings {
             self::render_woocommerce_settings();
         } elseif ($active_tab === 'orders') {
             self::render_orders_settings();
+        } elseif ($active_tab === 'properties') {
+            self::render_properties_settings();
         }
 
         submit_button();
 
         if ($active_tab === 'woocommerce') {
             echo '<button class="button" name="hubspot_refresh_pipelines" value="1">' . esc_html__('Sync', 'hub-woo-sync') . '</button>';
+        } elseif ($active_tab === 'properties') {
+            echo '<button class="button" name="hubspot_refresh_properties" value="1">' . esc_html__('Refresh Properties', 'hub-woo-sync') . '</button>';
         }
 
         echo '</form></div>';
@@ -315,6 +329,23 @@ class HubSpot_WC_Settings {
         echo '</tbody></table>';
     }
 
+    private static function render_properties_settings() {
+        $counts = [
+            'deals'      => count(get_option('hubspot_properties_deals', [])),
+            'contacts'   => count(get_option('hubspot_properties_contacts', [])),
+            'companies'  => count(get_option('hubspot_properties_companies', [])),
+            'products'   => count(get_option('hubspot_properties_products', [])),
+            'line_items' => count(get_option('hubspot_properties_line_items', [])),
+        ];
+
+        echo '<h3>' . esc_html__('Cached HubSpot Properties', 'hub-woo-sync') . '</h3>';
+        echo '<ul>';
+        foreach ($counts as $object => $count) {
+            echo '<li>' . esc_html(ucfirst(str_replace('_', ' ', $object))) . ': ' . intval($count) . '</li>';
+        }
+        echo '</ul>';
+    }
+
     public static function get_active_tab($tab) {
         return ($_GET['tab'] ?? 'authentication') === $tab ? 'nav-tab-active' : '';
     }
@@ -323,17 +354,28 @@ class HubSpot_WC_Settings {
         if (!empty($_POST['hubspot_refresh_pipelines'])) {
             self::refresh_pipeline_cache();
             set_transient('hubspot_pipelines_synced', 1, 30);
+        } elseif (!empty($_POST['hubspot_refresh_properties'])) {
+            self::refresh_property_cache();
+            set_transient('hubspot_properties_synced', 1, 30);
         } elseif (isset($_GET['page'], $_GET['settings-updated']) && $_GET['page'] === 'hubspot-woocommerce-sync') {
             self::refresh_pipeline_cache();
         }
 
         add_action('admin_notices', [__CLASS__, 'display_sync_notice']);
+        add_action('admin_notices', [__CLASS__, 'display_properties_notice']);
     }
 
     public static function display_sync_notice() {
         if (get_transient('hubspot_pipelines_synced')) {
             echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('HubSpot pipelines refreshed.', 'hub-woo-sync') . '</p></div>';
             delete_transient('hubspot_pipelines_synced');
+        }
+    }
+
+    public static function display_properties_notice() {
+        if (get_transient('hubspot_properties_synced')) {
+            echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__('HubSpot properties refreshed.', 'hub-woo-sync') . '</p></div>';
+            delete_transient('hubspot_properties_synced');
         }
     }
 
@@ -357,6 +399,12 @@ class HubSpot_WC_Settings {
                     array_fill_keys(array_keys($pipelines[$manual]['stages']), true)
                 );
             }
+        }
+    }
+
+    private static function refresh_property_cache() {
+        if (function_exists('hubwoo_refresh_property_cache')) {
+            hubwoo_refresh_property_cache();
         }
     }
 
