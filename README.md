@@ -146,6 +146,14 @@ HubSpot WooCommerce Sync is a WordPress plugin that integrates WooCommerce with 
 6. Enable **Automatic Deal Creation** to sync new orders.
 7. In the **Orders** tab, enable **Auto-Complete Online Orders** to automatically mark paid orders complete.
 
+### Properties & Field Mapping
+Use the **Properties** tab to control how HubSpot data maps to WooCommerce.
+Click **Refresh Properties** at the top of the tab whenever you add new custom properties in HubSpot to pull the latest lists.
+For each object type (Deals, Contacts, Companies, Products and Line Items), choose the HubSpot property and the WooCommerce field (or custom meta key) that should sync.
+Several common mappings are filled in by default, and you can add additional rows to map custom fields.
+Any property left unmapped will be ignored during sync.
+Product mapping relies on matching SKUs, so make sure each product uses the same SKU in WooCommerce and HubSpot.
+
 ### Admin-Created Orders
 Orders created manually in WooCommerce are **not** synced automatically. After
 creating an order in the admin, go to **HubSpot → Order Management** and click
