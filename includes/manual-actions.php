@@ -97,29 +97,60 @@ function hubwoosync_manual_sync_hubspot_order() {
     foreach ($order->get_items() as $id => $item) $order->remove_item($id);
     foreach ($order->get_items('shipping') as $id => $item) $order->remove_item($id);
 
-    if (!empty($deal['contacts'])) {
-        $contact = fetch_hubspot_contact($deal['contacts'][0]);
-        if ($contact) {
-            $order->set_billing_first_name($contact['firstname'] ?? '');
-            $order->set_billing_last_name($contact['lastname'] ?? '');
-            $order->set_billing_email($contact['email'] ?? '');
-            $order->set_billing_phone($contact['phone'] ?? '');
+    $deal_map = get_option('hubspot_deal_field_map', []);
+    foreach ($deal_map as $prop => $field) {
+        if (isset($deal[$prop])) {
+            hubwoo_set_order_field_value($order, $field, $deal[$prop]);
         }
     }
 
-    $order->set_shipping_address_1($deal['address_line_1_shipping'] ?: $deal['address_line_1']);
-    $order->set_shipping_city($deal['city_shipping'] ?: $deal['city']);
-    $order->set_shipping_postcode($deal['postcode_shipping'] ?: $deal['postcode']);
-    $order->set_shipping_state($deal['state_shipping'] ?: $deal['state']);
-    $order->set_shipping_country($deal['country_region_shipping'] ?: $deal['country_region']);
-    $order->set_shipping_first_name($deal['first_name_shipping'] ?: $order->get_billing_first_name());
-    $order->set_shipping_last_name($deal['last_name_shipping'] ?: $order->get_billing_last_name());
-    $order->update_meta_data('_shipping_phone', $deal['phone_shipping'] ?: $order->get_billing_phone());
+    if (!empty($deal['contacts'])) {
+        $contact = fetch_hubspot_contact($deal['contacts'][0]);
+        if ($contact) {
+            $contact_map = get_option('hubspot_contact_field_map', []);
+            foreach ($contact_map as $prop => $field) {
+                if (isset($contact[$prop])) {
+                    hubwoo_set_order_field_value($order, $field, $contact[$prop]);
+                }
+            }
+        }
+    }
+
+    // Ensure fallback shipping fields if not provided
+    if (!empty($deal_map['address_line_1_shipping']) && empty($deal['address_line_1_shipping'])) {
+        hubwoo_set_order_field_value($order, $deal_map['address_line_1_shipping'], $deal['address_line_1']);
+    }
+    if (!empty($deal_map['city_shipping']) && empty($deal['city_shipping'])) {
+        hubwoo_set_order_field_value($order, $deal_map['city_shipping'], $deal['city']);
+    }
+    if (!empty($deal_map['postcode_shipping']) && empty($deal['postcode_shipping'])) {
+        hubwoo_set_order_field_value($order, $deal_map['postcode_shipping'], $deal['postcode']);
+    }
+    if (!empty($deal_map['state_shipping']) && empty($deal['state_shipping'])) {
+        hubwoo_set_order_field_value($order, $deal_map['state_shipping'], $deal['state']);
+    }
+    if (!empty($deal_map['country_region_shipping']) && empty($deal['country_region_shipping'])) {
+        hubwoo_set_order_field_value($order, $deal_map['country_region_shipping'], $deal['country_region']);
+    }
+    if (!empty($deal_map['first_name_shipping']) && empty($deal['first_name_shipping'])) {
+        hubwoo_set_order_field_value($order, $deal_map['first_name_shipping'], $order->get_billing_first_name());
+    }
+    if (!empty($deal_map['last_name_shipping']) && empty($deal['last_name_shipping'])) {
+        hubwoo_set_order_field_value($order, $deal_map['last_name_shipping'], $order->get_billing_last_name());
+    }
+    if (!empty($deal_map['phone_shipping']) && empty($deal['phone_shipping'])) {
+        hubwoo_set_order_field_value($order, $deal_map['phone_shipping'], $order->get_billing_phone());
+    }
 
     if (!empty($deal['companies'])) {
         $company = fetch_hubspot_company($deal['companies'][0]);
         if ($company) {
-            $order->set_billing_company($company['name'] ?? '');
+            $company_map = get_option('hubspot_company_field_map', []);
+            foreach ($company_map as $prop => $field) {
+                if (isset($company[$prop])) {
+                    hubwoo_set_order_field_value($order, $field, $company[$prop]);
+                }
+            }
         }
     }
 
@@ -137,6 +168,8 @@ function hubwoosync_manual_sync_hubspot_order() {
             if (!$line_item) continue;
 
         $product_id = wc_get_product_id_by_sku($line_item['sku']);
+        $product    = $product_id ? wc_get_product($product_id) : false;
+
         $item = new WC_Order_Item_Product();
         $item->set_name($line_item['name']);
         $item->set_product_id($product_id ?: 0);
@@ -146,6 +179,24 @@ function hubwoosync_manual_sync_hubspot_order() {
         $item->set_subtotal($total);
         $item->add_meta_data('Cost', $line_item['price']);
         $item->add_meta_data('SKU', $line_item['sku']);
+
+        $line_map = get_option('hubspot_line_item_field_map', []);
+        foreach ($line_map as $prop => $field) {
+            if (isset($line_item[$prop])) {
+                hubwoo_set_object_field_value($item, $field, $line_item[$prop]);
+            }
+        }
+
+        if ($product) {
+            $product_map = get_option('hubspot_product_field_map', []);
+            foreach ($product_map as $prop => $field) {
+                if (isset($line_item[$prop])) {
+                    hubwoo_set_object_field_value($product, $field, $line_item[$prop]);
+                }
+            }
+            $product->save();
+        }
+
         $order->add_item($item);
         }
     }
