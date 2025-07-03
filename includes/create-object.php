@@ -40,12 +40,8 @@ function hubspot_get_or_create_contact($order, $email, $access_token, &$error_ou
 
     // Create new contact dynamically from mapping
     $create_url = "https://api.hubapi.com/crm/v3/objects/contacts";
-    $field_map   = get_option('hubspot_contact_field_map', []);
-    $properties  = [];
-
-    foreach ($field_map as $prop => $field) {
-        $properties[$prop] = hubwoo_get_order_field_value($order, $field);
-    }
+    $field_map  = get_option('hubspot_contact_field_map', []);
+    $properties = hubwoosync_apply_mapping_to_deal($order, $field_map);
 
     // Ensure required email property is set
     if (empty($properties['email'])) {
@@ -169,9 +165,12 @@ function hubspot_create_deal_from_order($order, $pipeline_id, $deal_stage, $cont
     ];
 
     $field_map = get_option('hubspot_deal_field_map', []);
-    foreach ($field_map as $prop => $field) {
-        if (isset($properties[$prop])) continue; // don't overwrite required fields
-        $properties[$prop] = hubwoo_get_order_field_value($order, $field);
+    $mapped    = hubwoosync_apply_mapping_to_deal($order, $field_map);
+    foreach ($mapped as $prop => $value) {
+        if (isset($properties[$prop])) {
+            continue; // don't overwrite required fields
+        }
+        $properties[$prop] = $value;
     }
 
     $create_payload = [ 'properties' => $properties ];
@@ -211,11 +210,7 @@ function hubspot_create_deal_from_order($order, $pipeline_id, $deal_stage, $cont
  */
 function hubspot_patch_deal_optional_fields($deal_id, $order, $access_token) {
     $field_map = get_option('hubspot_deal_field_map', []);
-    $fields    = [];
-
-    foreach ($field_map as $prop => $woo_field) {
-        $fields[$prop] = hubwoo_get_order_field_value($order, $woo_field);
-    }
+    $fields    = hubwoosync_apply_mapping_to_deal($order, $field_map);
 
     $patch_payload = ['properties' => $fields];
 

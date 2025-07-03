@@ -140,3 +140,64 @@ function hubwoo_set_object_field_value($object, $field, $value) {
         $object->update_meta_data($field, $value);
     }
 }
+
+/**
+ * Build an array of HubSpot deal properties from a WooCommerce order using a
+ * field mapping array.
+ *
+ * @param WC_Order $order The order to read values from.
+ * @param array    $map   Associative array of HubSpot property => Woo field.
+ * @return array   Properties ready for HubSpot API payloads.
+ */
+function hubwoosync_apply_mapping_to_deal($order, array $map) {
+    $props = [];
+
+    foreach ($map as $property => $field) {
+        // Skip if property already set (caller may add required fields first).
+        if (array_key_exists($property, $props)) {
+            continue;
+        }
+
+        $value = hubwoo_get_order_field_value($order, $field);
+
+        // Basic type normalization for numbers and booleans.
+        if (is_numeric($value)) {
+            $value = $value + 0;
+        } elseif (is_bool($value)) {
+            $value = $value ? true : false;
+        } elseif (is_array($value)) {
+            $value = implode(', ', $value);
+        }
+
+        $props[$property] = $value;
+    }
+
+    return $props;
+}
+
+/**
+ * Apply HubSpot deal property values to a WooCommerce order based on mapping.
+ *
+ * @param array    $deal  Associative array of deal properties.
+ * @param WC_Order $order The order to modify.
+ * @param array    $map   Associative array of HubSpot property => Woo field.
+ */
+function hubwoosync_apply_deal_to_order(array $deal, $order, array $map) {
+    foreach ($map as $property => $field) {
+        if (!array_key_exists($property, $deal)) {
+            continue;
+        }
+
+        $value = $deal[$property];
+
+        if (is_numeric($value)) {
+            $value = $value + 0;
+        } elseif (is_bool($value)) {
+            $value = $value ? true : false;
+        } elseif (is_array($value)) {
+            $value = implode(', ', $value);
+        }
+
+        hubwoo_set_order_field_value($order, $field, $value);
+    }
+}
