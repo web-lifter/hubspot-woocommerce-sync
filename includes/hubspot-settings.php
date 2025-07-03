@@ -357,6 +357,11 @@ class HubSpot_WC_Settings {
     }
 
     private static function render_properties_settings() {
+        echo '<p>' . esc_html__(
+            'Mapped fields sync both ways. Product sync requires matching SKUs.',
+            'hub-woo-sync'
+        ) . '</p>';
+
         $objects = [
             'deals'      => __('Deal Field Mappings', 'hub-woo-sync'),
             'contacts'   => __('Contact Field Mappings', 'hub-woo-sync'),
@@ -408,7 +413,7 @@ class HubSpot_WC_Settings {
                     echo '<option value="' . esc_attr($key) . '"' . selected($woo_val, $key, false) . '>' . esc_html($label) . '</option>';
                 }
                 echo '</select>';
-                echo ' <input type="text" class="hubwoo-meta-key" name="' . esc_attr($option) . '[meta][]" value="' . esc_attr($meta) . '" placeholder="' . esc_attr__('Meta key', 'hub-woo-sync') . '"' . ($woo_val === 'meta' ? '' : ' style="display:none;"') . ' />';
+                echo ' <input type="text" class="hubwoo-meta-key" name="' . esc_attr($option) . '[meta][]" value="' . esc_attr($meta) . '" placeholder="' . esc_attr__('Field key', 'hub-woo-sync') . '"' . ($woo_val === 'meta' ? '' : ' style="display:none;"') . ' />';
                 echo '</td></tr>';
             }
 
@@ -751,7 +756,7 @@ class HubSpot_WC_Settings {
                 'description'      => __('Description', 'hub-woo-sync'),
                 'short_description'=> __('Short Description', 'hub-woo-sync'),
                 'sku'              => __('SKU', 'hub-woo-sync'),
-                'meta'             => __('Custom Meta', 'hub-woo-sync'),
+                'meta'             => __('Custom field...', 'hub-woo-sync'),
             ];
         }
 
@@ -777,7 +782,7 @@ class HubSpot_WC_Settings {
             'shipping_postcode'   => __('Shipping Postcode', 'hub-woo-sync'),
             'shipping_country'    => __('Shipping Country', 'hub-woo-sync'),
             'customer_note'       => __('Customer Note', 'hub-woo-sync'),
-            'meta'                => __('Custom Meta', 'hub-woo-sync'),
+            'meta'                => __('Custom field...', 'hub-woo-sync'),
         ];
     }
 
